@@ -1,0 +1,56 @@
+{
+  "name": "family-dinner-planner",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/lib/seed.ts"
+  },
+  "dependencies": {
+    "next": "^15.0",
+    "react": "^19.0",
+    "react-dom": "^19.0",
+
+    "@supabase/supabase-js": "^2.45",
+    "@supabase/ssr": "^0.5",
+    "drizzle-orm": "^0.34",
+    "postgres": "^3.4",
+
+    "zustand": "^5.0",
+    "@tanstack/react-query": "^5.60",
+
+    "tailwindcss": "^4.0",
+    "@radix-ui/react-dialog": "latest",
+    "@radix-ui/react-dropdown-menu": "latest",
+    "@radix-ui/react-checkbox": "latest",
+    "@radix-ui/react-select": "latest",
+    "@radix-ui/react-tabs": "latest",
+    "@radix-ui/react-toast": "latest",
+    "lucide-react": "^0.400",
+    "framer-motion": "^11.0",
+    "class-variance-authority": "^0.7",
+    "clsx": "^2.1",
+    "tailwind-merge": "^2.5",
+
+    "googleapis": "^140.0",
+    "@anthropic-ai/sdk": "^0.30",
+    "next-pwa": "^5.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.6",
+    "drizzle-kit": "^0.25",
+    "tsx": "^4.19",
+    "@types/react": "^19.0",
+    "@types/react-dom": "^19.0",
+    "@types/node": "^22.0",
+    "eslint": "^9.0",
+    "eslint-config-next": "^15.0"
+  }
+}
