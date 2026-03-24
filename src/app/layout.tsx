@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, DM_Sans } from "next/font/google";
+import { RegisterSW } from "@/components/register-sw";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -24,10 +25,19 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "Family Dinner Planner",
+    startupImage: "/apple-icon.png",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/icon-192.png",
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png",   sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    other: [
+      { rel: "mask-icon", url: "/icon-192.png" },
+    ],
   },
 };
 
@@ -35,7 +45,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#2D2A26",
+  userScalable: false,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#C85D3B" },
+    { media: "(prefers-color-scheme: dark)",  color: "#C85D3B" },
+  ],
 };
 
 export default function RootLayout({
@@ -53,6 +67,7 @@ export default function RootLayout({
         }}
       >
         {children}
+        <RegisterSW />
       </body>
     </html>
   );

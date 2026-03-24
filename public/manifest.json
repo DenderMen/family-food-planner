@@ -3,22 +3,51 @@
   "short_name": "Dinner Planner",
   "description": "Wochenplanung, Rezeptverwaltung und Einkaufslisten für die Familie",
   "start_url": "/plan",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#FAF6F1",
   "theme_color": "#C85D3B",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "lang": "de",
+  "categories": ["food", "lifestyle"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Wochenplan",
+      "short_name": "Plan",
+      "url": "/plan",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Einkaufsliste",
+      "short_name": "Einkauf",
+      "url": "/shopping",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
