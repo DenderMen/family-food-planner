@@ -7,7 +7,8 @@ declare global {
         txt2img: (
           prompt: string,
           test?: boolean,
-          model?: string
+          model?: string,
+          options?: { width?: number; height?: number }
         ) => Promise<HTMLImageElement>;
       };
     };

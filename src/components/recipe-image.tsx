@@ -73,7 +73,8 @@ export function RecipeImage({ imageUrl, category, height, style }: RecipeImagePr
             src={imageUrl!}
             alt=""
             fill
-            sizes="(max-width: 640px) 100vw, 640px"
+            sizes="(max-width: 768px) 100vw, 600px"
+            quality={85}
             onLoad={() => setStatus("loaded")}
             onError={() => setStatus("error")}
             style={{

@@ -7,14 +7,16 @@ export async function generateImage(recipeName: string): Promise<string | null> 
   if (typeof window === "undefined" || !window.puter?.ai?.txt2img) return null;
 
   const prompt =
-    `Professional food photography of ${recipeName}, on a ceramic plate, ` +
-    `warm lighting, top-down view, appetizing, photorealistic, 4k`;
+    `Professional food photography of ${recipeName}, close-up shot, ` +
+    `shallow depth of field, warm natural lighting, on rustic wooden table, ` +
+    `appetizing, high resolution, 4k, photorealistic`;
 
   try {
     const img = await window.puter.ai.txt2img(
       prompt,
       false,
-      "black-forest-labs/FLUX.1-schnell-Free"
+      "black-forest-labs/FLUX.1-schnell-Free",
+      { width: 1024, height: 768 }
     );
 
     // Convert the image element src to a File for upload

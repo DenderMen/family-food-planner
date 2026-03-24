@@ -190,6 +190,34 @@ export default function SettingsPage() {
     queryClient.invalidateQueries({ queryKey: ["recipes"] });
   }
 
+  async function handleRegenerateAllImages() {
+    if (imgGenRunning) return;
+    const res = await fetch("/api/recipes");
+    if (!res.ok) return;
+    type RecipeRow = { id: string; name: string; imageUrl: string | null; type: string; category: string; prepTime: number; cookTime: number; estimatedCost: string; isFavorite: boolean; nursingBoost: string | null; steps: string[]; ingredients: unknown[] };
+    const all: RecipeRow[] = await res.json();
+    if (all.length === 0) return;
+
+    setImgGenRunning(true);
+    setImgGenProgress({ done: 0, total: all.length });
+
+    for (let i = 0; i < all.length; i++) {
+      const recipe = all[i];
+      const url = await generateImage(recipe.name);
+      if (url) {
+        await fetch(`/api/recipes/${recipe.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...recipe, imageUrl: url }),
+        });
+      }
+      setImgGenProgress({ done: i + 1, total: all.length });
+    }
+
+    setImgGenRunning(false);
+    queryClient.invalidateQueries({ queryKey: ["recipes"] });
+  }
+
   // ── Styles ──────────────────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
@@ -448,6 +476,13 @@ export default function SettingsPage() {
             style={{ ...btn("#7B6BA4"), opacity: imgGenRunning || clearingImages ? 0.6 : 1, cursor: imgGenRunning || clearingImages ? "wait" : "pointer" }}
           >
             {imgGenRunning ? "⏳ Bilder werden generiert…" : "🎨 Fehlende Rezeptbilder generieren"}
+          </button>
+          <button
+            onClick={handleRegenerateAllImages}
+            disabled={imgGenRunning || clearingImages}
+            style={{ ...btn("#5A8A5E"), opacity: imgGenRunning || clearingImages ? 0.6 : 1, cursor: imgGenRunning || clearingImages ? "wait" : "pointer", fontSize: "14px" }}
+          >
+            {imgGenRunning ? "⏳ Bilder werden generiert…" : "🔄 Alle Bilder neu generieren (neuer Prompt + 1024×768)"}
           </button>
           <button
             onClick={handleClearImages}
