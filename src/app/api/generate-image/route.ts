@@ -9,9 +9,8 @@ export const maxDuration = 60;
 
 // Models to try in order — first one that responds 200 wins
 const MODELS = [
-  "gemini-2.0-flash-preview-image-generation",
-  "gemini-2.0-flash-exp",
-  "gemini-2.0-flash",
+  "gemini-3-pro-image-preview",
+  "gemini-3.1-flash-image-preview"
 ];
 
 interface GeminiPart {
