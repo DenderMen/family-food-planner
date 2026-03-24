@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { generateImage } from "@/lib/generate-image";
 import { getWeekId } from "@/lib/utils";
 import type { SettingsResponse } from "@/app/api/settings/route";
 import type { SyncResponse } from "@/app/api/calendar/sync/route";
@@ -151,71 +150,40 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleGenerateMissingImages() {
-    if (imgGenRunning) return;
-
-    // Fetch recipes (imageUrl may still have broken Pollinations URLs from DB)
-    const res = await fetch("/api/recipes");
-    if (!res.ok) return;
-    type RecipeRow = { id: string; name: string; imageUrl: string | null; type: string; category: string; prepTime: number; cookTime: number; estimatedCost: string; isFavorite: boolean; nursingBoost: string | null; steps: string[]; ingredients: unknown[] };
-    const all: RecipeRow[] = await res.json();
-
-    // Treat Pollinations URLs as "missing" — they are broken
-    const missing = all.filter(
-      (r) => !r.imageUrl || r.imageUrl.includes("pollinations.ai")
-    );
-
-    if (missing.length === 0) {
-      setImgGenProgress({ done: 0, total: 0 });
-      return;
-    }
-
+  async function runImageGeneration(recipes: { id: string; name: string }[]) {
+    if (recipes.length === 0) { setImgGenProgress({ done: 0, total: 0 }); return; }
     setImgGenRunning(true);
-    setImgGenProgress({ done: 0, total: missing.length });
-
-    for (let i = 0; i < missing.length; i++) {
-      const recipe = missing[i];
-      const url = await generateImage(recipe.name);
-      if (url) {
-        await fetch(`/api/recipes/${recipe.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...recipe, imageUrl: url }),
-        });
-      }
-      setImgGenProgress({ done: i + 1, total: missing.length });
+    setImgGenProgress({ done: 0, total: recipes.length });
+    for (let i = 0; i < recipes.length; i++) {
+      const { id, name } = recipes[i];
+      await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeName: name, recipeId: id }),
+      });
+      setImgGenProgress({ done: i + 1, total: recipes.length });
     }
-
     setImgGenRunning(false);
     queryClient.invalidateQueries({ queryKey: ["recipes"] });
+  }
+
+  async function handleGenerateMissingImages() {
+    if (imgGenRunning) return;
+    const res = await fetch("/api/recipes");
+    if (!res.ok) return;
+    const all: { id: string; name: string; imageUrl: string | null }[] = await res.json();
+    const missing = all.filter(
+      (r) => !r.imageUrl || r.imageUrl.includes("pollinations.ai") || r.imageUrl.includes("puter")
+    );
+    await runImageGeneration(missing);
   }
 
   async function handleRegenerateAllImages() {
     if (imgGenRunning) return;
     const res = await fetch("/api/recipes");
     if (!res.ok) return;
-    type RecipeRow = { id: string; name: string; imageUrl: string | null; type: string; category: string; prepTime: number; cookTime: number; estimatedCost: string; isFavorite: boolean; nursingBoost: string | null; steps: string[]; ingredients: unknown[] };
-    const all: RecipeRow[] = await res.json();
-    if (all.length === 0) return;
-
-    setImgGenRunning(true);
-    setImgGenProgress({ done: 0, total: all.length });
-
-    for (let i = 0; i < all.length; i++) {
-      const recipe = all[i];
-      const url = await generateImage(recipe.name);
-      if (url) {
-        await fetch(`/api/recipes/${recipe.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...recipe, imageUrl: url }),
-        });
-      }
-      setImgGenProgress({ done: i + 1, total: all.length });
-    }
-
-    setImgGenRunning(false);
-    queryClient.invalidateQueries({ queryKey: ["recipes"] });
+    const all: { id: string; name: string }[] = await res.json();
+    await runImageGeneration(all);
   }
 
   // ── Styles ──────────────────────────────────────────────────────────────────

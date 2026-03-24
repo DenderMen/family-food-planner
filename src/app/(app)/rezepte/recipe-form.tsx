@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { formatEuro } from "@/lib/utils";
-import { generateImage } from "@/lib/generate-image";
 import { RecipeImage } from "@/components/recipe-image";
 import type { ScanResult } from "./scan-modal";
 
@@ -115,18 +114,15 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
     } catch {
       return; // error displayed via saveMutation.isError
     }
-    // If no image, generate one with Puter.js in the background
+    // If no image, generate one via Gemini server-side
     if (!imageUrl && saved?.id) {
       setGenerating(true);
       try {
-        const genUrl = await generateImage(name);
-        if (genUrl) {
-          await fetch(`/api/recipes/${saved.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...saved, imageUrl: genUrl }),
-          });
-        }
+        await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recipeName: name, recipeId: saved.id }),
+        });
       } catch {
         // silent – image is optional
       } finally {
