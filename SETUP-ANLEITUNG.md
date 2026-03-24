@@ -137,7 +137,7 @@ Baue den Supabase Auth Flow mit @supabase/ssr.
 Baue die Rezept-Datenbank:
 - API Routes: GET/POST/PUT/DELETE /api/recipes
 - Rezept-Übersichtsseite mit Filtern (Saison, Kategorie, Zeit, Kosten)
-- Rezept-Detailseite mit Zutaten, Thermomix-Steps, Stillzeit-Info
+- Rezept-Detailseite mit Zutaten, Stillzeit-Info
 - Rezept anlegen/bearbeiten Formular
 ```
 
@@ -154,7 +154,7 @@ Baue den Wochenplan-Editor:
 ```
 Baue die automatische Einkaufsliste:
 - Generiert aus dem Wochenplan
-- Sortiert nach Laden (Aldi → REWE → Edeka → Metzger)
+- Sortiert nach Laden (Aldi → Supermarkt → Metzger)
 - Split in 2 Einkäufe (Mo-Do / Fr-So)
 - Items abhakbar (Checkbox)
 - Zeigt welches Rezept die Zutat braucht

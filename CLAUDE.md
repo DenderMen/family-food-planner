@@ -32,17 +32,15 @@ Google Calendar Sync, Kinder-Dashboard.
 - Vermeiden: scharfes Essen (wg. Kids), rohes Fleisch/Mett, Alkohol im Essen
 - Bio: bevorzugt, nicht streng
 - Regional: gewünscht, flexibel (kein strikter Radius)
-- Thermomix vorhanden! → Rezepte sollen TM-Schritte enthalten
 
 ## Einkauf
 - 2x Großeinkauf pro Woche (z.B. Montag + Donnerstag/Freitag)
 - Einkaufsliste automatisch splitten auf 2 Einkäufe
-- Läden in Aachen:
-  - REWE: Bio-Gemüse, Milch, Basics
-  - Edeka: Premium-Produkte, Käse, Obst
-  - Aldi: Bio-Basics, günstige Grundlagen
-  - Metzger: Aufschnitt, Fleisch, Wurst
-- Einkaufsliste nach Laden sortieren (Aldi → REWE → Edeka → Metzger)
+- Läden in Aachen (3 Kategorien):
+  - Supermarkt (REWE oder Edeka): Gemüse, Obst, Milch, Käse, Brot, Eier, Sahne, TK-Ware, Konserven
+  - Aldi: Günstige Basics (Nudeln, Mehl, Reis, Kartoffeln, Zucker, Öl, Gewürze)
+  - Metzger: Fleisch, Hackfleisch, Aufschnitt, Wurst
+- Einkaufsliste nach Laden sortieren: Aldi → Supermarkt → Metzger
 
 ## Favoriten-Gerichte (Basis-Rezeptpool)
 Diese Gerichte funktionieren immer und bilden den Kern:
@@ -51,7 +49,7 @@ Diese Gerichte funktionieren immer und bilden den Kern:
 - Kartoffelgratin
 - Kartoffeln + Spinat + Fischstäbchen
 - Hot Dogs + Pommes
-- Pizza (Teig aus dem Thermomix)
+- Pizza
 
 ## Coding-Standards
 - TypeScript strict mode
@@ -72,10 +70,10 @@ Diese Gerichte funktionieren immer und bilden den Kern:
 - Enums: meal_type (warm/abendbrot), meal_category (fleisch/fisch/vegetarisch/abendbrot), season, shop_name, plan_status
 
 ## Kern-Features (Priorität)
-1. Rezept-Datenbank mit CRUD + Zutaten + TM-Steps + Stillzeit-Info
+1. Rezept-Datenbank mit CRUD + Zutaten + Stillzeit-Info
 2. Wochenplan-Editor mit Budget-Tracking (150€ Limit live)
 3. Automatische Einkaufsliste (nach Laden sortiert, 2 Splits)
-4. Google Calendar Sync (Events mit Emoji-Titel + Erinnerung)
+4. Google Calendar Sync (Events mit Emoji-Titel + Zutaten, blau)
 5. Kinder-Dashboard (große Emojis, bunte Karten für Theo & Carlo)
 6. Claude AI Rezeptvorschläge (Saison + Budget + Familienprofil)
 

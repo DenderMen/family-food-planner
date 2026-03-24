@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ─────────────────────────────────── */
+@theme {
+  /* Fonts */
+  --font-fraunces: "Fraunces", serif;
+  --font-dm-sans: "DM Sans", sans-serif;
+
+  /* Brand colours */
+  --color-accent:   #C85D3B;
+  --color-green:    #5A8A5E;
+  --color-purple:   #7B6BA4;
+
+  /* Warm neutrals */
+  --color-bg:        #FAF6F1;
+  --color-card:      #FFFFFF;
+  --color-border:    #E8E2DA;
+  --color-text:      #2D2A26;
+  --color-muted:     #8A8580;
+  --color-warm-50:   #FDF8F5;
+  --color-warm-100:  #F5EDE6;
+  --color-warm-200:  #E8D5C8;
+  --color-warm-800:  #4A3728;
+  --color-warm-900:  #2D1F14;
+
+  /* Spacing / radius */
+  --radius-card: 16px;
+  --radius-pill: 9999px;
+}
+
+/* ─── CSS Custom Properties (runtime access) ─────────── */
+:root {
+  --accent:   #C85D3B;
+  --green:    #5A8A5E;
+  --purple:   #7B6BA4;
+  --bg:       #FAF6F1;
+  --card:     #FFFFFF;
+  --border:   #E8E2DA;
+  --text:     #2D2A26;
+  --muted:    #8A8580;
+}
+
+/* ─── Base ───────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #FAF6F1;
+}
+
+body {
+  background-color: #FAF6F1;
+  color: #2D2A26;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  min-height: 100dvh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Remove default select arrow on mobile for custom styling */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* ─── Scrollbar hide utility ─────────────────────────── */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Card base ──────────────────────────────────────── */
+.card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #E8E2DA;
+  box-shadow: 0 1px 4px rgba(45, 42, 38, 0.06);
+}
+
+/* ─── Tap highlight removal on mobile ───────────────── */
+a, button {
+  -webkit-tap-highlight-color: transparent;
+}
