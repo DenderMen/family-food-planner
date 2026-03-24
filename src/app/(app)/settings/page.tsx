@@ -66,6 +66,7 @@ export default function SettingsPage() {
   const [calendarSaved, setCalendarSaved] = useState(false);
   const [imgGenRunning, setImgGenRunning] = useState(false);
   const [imgGenProgress, setImgGenProgress] = useState<{ done: number; total: number } | null>(null);
+  const [clearingImages, setClearingImages] = useState(false);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -139,18 +140,39 @@ export default function SettingsPage() {
     saveCalendarMut.mutate(calendarId);
   }
 
+  async function handleClearImages() {
+    if (clearingImages || imgGenRunning) return;
+    setClearingImages(true);
+    try {
+      await fetch("/api/recipes/clear-images", { method: "POST" });
+      setImgGenProgress(null);
+    } finally {
+      setClearingImages(false);
+    }
+  }
+
   async function handleGenerateMissingImages() {
     if (imgGenRunning) return;
+
+    // Fetch recipes (imageUrl may still have broken Pollinations URLs from DB)
     const res = await fetch("/api/recipes");
     if (!res.ok) return;
-    const all: Array<{ id: string; name: string; imageUrl: string | null; type: string; category: string; prepTime: number; cookTime: number; estimatedCost: string; isFavorite: boolean; nursingBoost: string | null; steps: string[]; ingredients: unknown[] }> = await res.json();
-    const missing = all.filter((r) => !r.imageUrl);
+    type RecipeRow = { id: string; name: string; imageUrl: string | null; type: string; category: string; prepTime: number; cookTime: number; estimatedCost: string; isFavorite: boolean; nursingBoost: string | null; steps: string[]; ingredients: unknown[] };
+    const all: RecipeRow[] = await res.json();
+
+    // Treat Pollinations URLs as "missing" — they are broken
+    const missing = all.filter(
+      (r) => !r.imageUrl || r.imageUrl.includes("pollinations.ai")
+    );
+
     if (missing.length === 0) {
       setImgGenProgress({ done: 0, total: 0 });
       return;
     }
+
     setImgGenRunning(true);
     setImgGenProgress({ done: 0, total: missing.length });
+
     for (let i = 0; i < missing.length; i++) {
       const recipe = missing[i];
       const url = await generateImage(recipe.name);
@@ -163,6 +185,7 @@ export default function SettingsPage() {
       }
       setImgGenProgress({ done: i + 1, total: missing.length });
     }
+
     setImgGenRunning(false);
     queryClient.invalidateQueries({ queryKey: ["recipes"] });
   }
@@ -418,13 +441,22 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <button
-          onClick={handleGenerateMissingImages}
-          disabled={imgGenRunning}
-          style={{ ...btn("#7B6BA4"), opacity: imgGenRunning ? 0.6 : 1, cursor: imgGenRunning ? "wait" : "pointer" }}
-        >
-          {imgGenRunning ? "⏳ Bilder werden generiert…" : "🎨 Fehlende Rezeptbilder generieren"}
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button
+            onClick={handleGenerateMissingImages}
+            disabled={imgGenRunning || clearingImages}
+            style={{ ...btn("#7B6BA4"), opacity: imgGenRunning || clearingImages ? 0.6 : 1, cursor: imgGenRunning || clearingImages ? "wait" : "pointer" }}
+          >
+            {imgGenRunning ? "⏳ Bilder werden generiert…" : "🎨 Fehlende Rezeptbilder generieren"}
+          </button>
+          <button
+            onClick={handleClearImages}
+            disabled={clearingImages || imgGenRunning}
+            style={{ ...btn("transparent", "#8A8580"), border: "1px solid #E8E2DA", opacity: clearingImages || imgGenRunning ? 0.5 : 1, cursor: clearingImages || imgGenRunning ? "wait" : "pointer", fontSize: "13px" }}
+          >
+            {clearingImages ? "⏳ Wird bereinigt…" : "🗑️ Alle Bild-URLs zurücksetzen (bei 404-Problemen)"}
+          </button>
+        </div>
       </div>
 
       {/* ── Info card ───────────────────────────────────────────────── */}

@@ -18,6 +18,11 @@ const CAT: Record<string, CatCfg> = {
 };
 const DEFAULT_CFG: CatCfg = { bg: "#FAF6F1", color: "#8A8580", Icon: UtensilsCrossed };
 
+/** Only Supabase Storage URLs go through next/image (whitelisted in next.config.ts). */
+function isSupabaseUrl(url: string) {
+  return url.includes(".supabase.co");
+}
+
 function Placeholder({ category, height }: { category: string; height: number }) {
   const { bg, color, Icon } = CAT[category] ?? DEFAULT_CFG;
   return (
@@ -41,6 +46,9 @@ export function RecipeImage({ imageUrl, category, height, style }: RecipeImagePr
     imageUrl ? "loading" : "error"
   );
 
+  const showImage = imageUrl && status !== "error";
+  const useNextImage = imageUrl ? isSupabaseUrl(imageUrl) : false;
+
   return (
     <div style={{ position: "relative", height, flexShrink: 0, ...style }}>
       {/* Skeleton — shown while loading */}
@@ -58,24 +66,41 @@ export function RecipeImage({ imageUrl, category, height, style }: RecipeImagePr
       {/* Placeholder — shown on error or no URL */}
       {status === "error" && <Placeholder category={category} height={height} />}
 
-      {/* Image — always mounted when url exists, hidden until loaded */}
-      {imageUrl && (
-        <NextImage
-          src={imageUrl}
-          alt=""
-          fill
-          sizes="(max-width: 640px) 100vw, 640px"
-          onLoad={() => setStatus("loaded")}
-          onError={() => setStatus("error")}
-          style={{
-            objectFit: "cover",
-            opacity: status === "loaded" ? 1 : 0,
-            transition: "opacity 0.3s ease",
-          }}
-        />
+      {/* Image — use next/image only for Supabase URLs, plain <img> otherwise */}
+      {showImage && (
+        useNextImage ? (
+          <NextImage
+            src={imageUrl!}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 640px"
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("error")}
+            style={{
+              objectFit: "cover",
+              opacity: status === "loaded" ? 1 : 0,
+              transition: "opacity 0.3s ease",
+            }}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl!}
+            alt=""
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("error")}
+            style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%",
+              objectFit: "cover",
+              opacity: status === "loaded" ? 1 : 0,
+              transition: "opacity 0.3s ease",
+            }}
+          />
+        )
       )}
 
-      {/* Shimmer keyframe — injected once as a style tag */}
+      {/* Shimmer keyframe */}
       <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
     </div>
   );
@@ -95,6 +120,7 @@ export function RecipeThumb({ imageUrl, category, size, borderRadius = "50%" }: 
     imageUrl ? "loading" : "error"
   );
   const { bg, color, Icon } = CAT[category] ?? DEFAULT_CFG;
+  const useNextImage = imageUrl ? isSupabaseUrl(imageUrl) : false;
 
   return (
     <div
@@ -112,20 +138,37 @@ export function RecipeThumb({ imageUrl, category, size, borderRadius = "50%" }: 
       <Icon size={Math.round(size * 0.45)} color={color} strokeWidth={1.4} />
 
       {/* Image fades in on top */}
-      {imageUrl && (
-        <NextImage
-          src={imageUrl}
-          alt=""
-          fill
-          sizes={`${size}px`}
-          onLoad={() => setStatus("loaded")}
-          onError={() => setStatus("error")}
-          style={{
-            objectFit: "cover",
-            opacity: status === "loaded" ? 1 : 0,
-            transition: "opacity 0.25s ease",
-          }}
-        />
+      {imageUrl && status !== "error" && (
+        useNextImage ? (
+          <NextImage
+            src={imageUrl}
+            alt=""
+            fill
+            sizes={`${size}px`}
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("error")}
+            style={{
+              objectFit: "cover",
+              opacity: status === "loaded" ? 1 : 0,
+              transition: "opacity 0.25s ease",
+            }}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt=""
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("error")}
+            style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%",
+              objectFit: "cover",
+              opacity: status === "loaded" ? 1 : 0,
+              transition: "opacity 0.25s ease",
+            }}
+          />
+        )
       )}
     </div>
   );
