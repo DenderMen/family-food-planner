@@ -3,6 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Camera, BookPlus } from "lucide-react";
 import { RecipeImage } from "@/components/recipe-image";
 import { formatEuro } from "@/lib/utils";
 import type { ScanResult } from "./scan-modal";
@@ -120,13 +121,14 @@ export default function RezeptePage() {
           <button
             onClick={() => setShowScan(true)}
             title="Rezept scannen oder importieren"
-            style={{ width: 44, height: 44, borderRadius: "50%", background: "#5A8A5E", color: "#fff", border: "none", fontSize: "20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(90,138,94,0.35)" }}>
-            📷
+            style={{ width: 44, height: 44, borderRadius: "50%", background: "#5A8A5E", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(90,138,94,0.35)" }}>
+            <Camera size={20} />
           </button>
           <button
             onClick={() => { setScanPrefill(null); setEditRecipe("neu"); }}
-            style={{ width: 44, height: 44, borderRadius: "50%", background: "#C85D3B", color: "#fff", border: "none", fontSize: "24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(200,93,59,0.35)" }}>
-            +
+            title="Neues Rezept erstellen"
+            style={{ width: 44, height: 44, borderRadius: "50%", background: "#C85D3B", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(200,93,59,0.35)" }}>
+            <BookPlus size={22} />
           </button>
         </div>
       </div>

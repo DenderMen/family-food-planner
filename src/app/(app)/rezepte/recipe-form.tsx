@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { formatEuro } from "@/lib/utils";
+import { generateImage } from "@/lib/generate-image";
 import { RecipeImage } from "@/components/recipe-image";
 import type { ScanResult } from "./scan-modal";
 
@@ -77,6 +78,7 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
   const [nursingBoost, setNursingBoost] = useState(prefill?.nursingBoost ?? recipe?.nursingBoost ?? "");
   const [imageUrl, setImageUrl] = useState<string | null>(prefill?.imageUrl ?? recipe?.imageUrl ?? null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [steps, setSteps] = useState<string[]>(
     prefill?.steps?.length ? prefill.steps : (recipe?.steps?.length ? recipe.steps : [""])
   );
@@ -104,8 +106,35 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
 
   const saveMutation = useMutation({
     mutationFn: () => saveRecipe(recipe, { name, type, category, prepTime: Number(prepTime), cookTime: Number(cookTime), estimatedCost, isFavorite, nursingBoost: nursingBoost || null, imageUrl, steps: steps.filter(Boolean), ingredients: ings.filter((i) => i.name) }),
-    onSuccess: onSaved,
   });
+
+  async function handleSave() {
+    let saved: Recipe & { ingredients: unknown[] } | null = null;
+    try {
+      saved = await saveMutation.mutateAsync();
+    } catch {
+      return; // error displayed via saveMutation.isError
+    }
+    // If no image, generate one with Puter.js in the background
+    if (!imageUrl && saved?.id) {
+      setGenerating(true);
+      try {
+        const genUrl = await generateImage(name);
+        if (genUrl) {
+          await fetch(`/api/recipes/${saved.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...saved, imageUrl: genUrl }),
+          });
+        }
+      } catch {
+        // silent – image is optional
+      } finally {
+        setGenerating(false);
+      }
+    }
+    onSaved();
+  }
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteRecipe(recipe!.id),
@@ -321,10 +350,10 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
           <p style={{ color: "#DC2626", fontSize: "13px", marginBottom: 8 }}>Fehler beim Speichern. Bitte alle Felder prüfen.</p>
         )}
         <button
-          onClick={() => saveMutation.mutate()}
-          disabled={!name || saveMutation.isPending}
-          style={{ width: "100%", padding: "16px", background: !name || saveMutation.isPending ? "#E8D5C8" : "#C85D3B", color: "#fff", border: "none", borderRadius: 16, fontSize: "16px", fontWeight: 600, cursor: !name || saveMutation.isPending ? "default" : "pointer", boxShadow: name ? "0 4px 16px rgba(200,93,59,0.3)" : "none", fontFamily: "'DM Sans', sans-serif" }}>
-          {saveMutation.isPending ? "Wird gespeichert…" : recipe ? "Änderungen speichern" : "Rezept erstellen"}
+          onClick={handleSave}
+          disabled={!name || saveMutation.isPending || generating}
+          style={{ width: "100%", padding: "16px", background: !name || saveMutation.isPending || generating ? "#E8D5C8" : "#C85D3B", color: "#fff", border: "none", borderRadius: 16, fontSize: "16px", fontWeight: 600, cursor: !name || saveMutation.isPending || generating ? "default" : "pointer", boxShadow: name ? "0 4px 16px rgba(200,93,59,0.3)" : "none", fontFamily: "'DM Sans', sans-serif" }}>
+          {generating ? "Bild wird generiert…" : saveMutation.isPending ? "Wird gespeichert…" : recipe ? "Änderungen speichern" : "Rezept erstellen"}
         </button>
       </div>
     </div>

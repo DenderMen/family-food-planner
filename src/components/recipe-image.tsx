@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import NextImage from "next/image";
-import { UtensilsCrossed, Fish, Salad, Sandwich, Cookie } from "lucide-react";
+import { UtensilsCrossed, Fish, Salad, Utensils, Sandwich } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 
 // ─── Per-category placeholder config ──────────────────────────────────────────
@@ -13,8 +13,8 @@ const CAT: Record<string, CatCfg> = {
   fleisch:     { bg: "#FEF3EE", color: "#C84B2B", Icon: UtensilsCrossed },
   fisch:       { bg: "#EFF6FF", color: "#1E40AF", Icon: Fish },
   vegetarisch: { bg: "#F0FDF4", color: "#14532D", Icon: Salad },
-  abendbrot:   { bg: "#F5F3FF", color: "#4C1D95", Icon: Sandwich },
-  snack:       { bg: "#FFFBEB", color: "#92400E", Icon: Cookie },
+  abendbrot:   { bg: "#F5F3FF", color: "#4C1D95", Icon: Utensils },
+  snack:       { bg: "#FFFBEB", color: "#92400E", Icon: Sandwich },
 };
 const DEFAULT_CFG: CatCfg = { bg: "#FAF6F1", color: "#8A8580", Icon: UtensilsCrossed };
 

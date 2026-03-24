@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, DM_Sans } from "next/font/google";
+import Script from "next/script";
 import { RegisterSW } from "@/components/register-sw";
 import "./globals.css";
 
@@ -68,6 +69,7 @@ export default function RootLayout({
       >
         {children}
         <RegisterSW />
+        <Script src="https://js.puter.com/v2/" strategy="afterInteractive" />
       </body>
     </html>
   );

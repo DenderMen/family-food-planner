@@ -362,7 +362,7 @@ export default function PlanPage() {
 
   function selectSnack(dayOfWeek: number, snack: SnackRecipe | null) {
     if (!snack) {
-      setDay(dayOfWeek, { snackRecipeId: null, snackRecipe: null });
+      setDay(dayOfWeek, { snackRecipeId: null, snackRecipe: null, estimatedCost: "0" });
       return;
     }
     // Build a minimal Recipe from SnackRecipe
@@ -378,7 +378,7 @@ export default function PlanPage() {
       nursingBoost: null,
       imageUrl: null,
     };
-    setDay(dayOfWeek, { snackRecipeId: snack.id, snackRecipe: snackAsRecipe });
+    setDay(dayOfWeek, { snackRecipeId: snack.id, snackRecipe: snackAsRecipe, estimatedCost: snack.estimatedCost });
   }
 
   function toggleSkip(dayOfWeek: number) {

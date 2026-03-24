@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { recipes, ingredients } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { getCurrentFamily } from "@/lib/db/get-family";
-import { pollinationsImageUrl } from "@/lib/utils";
 
 export async function GET() {
   try {
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
         estimatedCost: String(recipeData.estimatedCost || "0"),
         isFavorite: Boolean(recipeData.isFavorite),
         nursingBoost: recipeData.nursingBoost ? String(recipeData.nursingBoost) : null,
-        imageUrl: recipeData.imageUrl ? String(recipeData.imageUrl) : pollinationsImageUrl(name),
+        imageUrl: recipeData.imageUrl ? String(recipeData.imageUrl) : null,
         steps: Array.isArray(recipeData.steps) ? recipeData.steps.filter((s: unknown) => typeof s === "string") : [],
         slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
       })

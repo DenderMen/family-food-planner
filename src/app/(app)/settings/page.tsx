@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { generateImage } from "@/lib/generate-image";
 import { getWeekId } from "@/lib/utils";
 import type { SettingsResponse } from "@/app/api/settings/route";
 import type { SyncResponse } from "@/app/api/calendar/sync/route";
@@ -63,6 +64,8 @@ export default function SettingsPage() {
   const [syncState, setSyncState] = useState<SyncState>({ status: "idle" });
   const [selectedCalendarId, setSelectedCalendarId] = useState<string>("");
   const [calendarSaved, setCalendarSaved] = useState(false);
+  const [imgGenRunning, setImgGenRunning] = useState(false);
+  const [imgGenProgress, setImgGenProgress] = useState<{ done: number; total: number } | null>(null);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -134,6 +137,34 @@ export default function SettingsPage() {
   function handleCalendarChange(calendarId: string) {
     setSelectedCalendarId(calendarId);
     saveCalendarMut.mutate(calendarId);
+  }
+
+  async function handleGenerateMissingImages() {
+    if (imgGenRunning) return;
+    const res = await fetch("/api/recipes");
+    if (!res.ok) return;
+    const all: Array<{ id: string; name: string; imageUrl: string | null; type: string; category: string; prepTime: number; cookTime: number; estimatedCost: string; isFavorite: boolean; nursingBoost: string | null; steps: string[]; ingredients: unknown[] }> = await res.json();
+    const missing = all.filter((r) => !r.imageUrl);
+    if (missing.length === 0) {
+      setImgGenProgress({ done: 0, total: 0 });
+      return;
+    }
+    setImgGenRunning(true);
+    setImgGenProgress({ done: 0, total: missing.length });
+    for (let i = 0; i < missing.length; i++) {
+      const recipe = missing[i];
+      const url = await generateImage(recipe.name);
+      if (url) {
+        await fetch(`/api/recipes/${recipe.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...recipe, imageUrl: url }),
+        });
+      }
+      setImgGenProgress({ done: i + 1, total: missing.length });
+    }
+    setImgGenRunning(false);
+    queryClient.invalidateQueries({ queryKey: ["recipes"] });
   }
 
   // ── Styles ──────────────────────────────────────────────────────────────────
@@ -355,6 +386,45 @@ export default function SettingsPage() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* ── AI Image Generation ─────────────────────────────────────── */}
+      <div style={card}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: "#F5F3FF", border: "1px solid #DDD6FE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
+            🎨
+          </div>
+          <div>
+            <div style={{ fontSize: "16px", fontWeight: 700, color: "#2D2A26" }}>Rezeptbilder generieren</div>
+            <div style={{ fontSize: "13px", color: "#8A8580", marginTop: 2 }}>
+              KI-Fotos für Rezepte ohne Bild erstellen (Puter.js, kostenlos)
+            </div>
+          </div>
+        </div>
+
+        {imgGenProgress !== null && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#4A4540", marginBottom: 6 }}>
+              <span>{imgGenProgress.total === 0 ? "Alle Rezepte haben bereits ein Bild ✓" : `${imgGenProgress.done} / ${imgGenProgress.total} generiert`}</span>
+              {imgGenProgress.total > 0 && !imgGenRunning && imgGenProgress.done === imgGenProgress.total && (
+                <span style={{ color: "#5A8A5E", fontWeight: 600 }}>Fertig!</span>
+              )}
+            </div>
+            {imgGenProgress.total > 0 && (
+              <div style={{ height: 6, background: "#F5EDE6", borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", background: "#7B6BA4", borderRadius: 999, width: `${Math.round((imgGenProgress.done / imgGenProgress.total) * 100)}%`, transition: "width 0.3s ease" }} />
+              </div>
+            )}
+          </div>
+        )}
+
+        <button
+          onClick={handleGenerateMissingImages}
+          disabled={imgGenRunning}
+          style={{ ...btn("#7B6BA4"), opacity: imgGenRunning ? 0.6 : 1, cursor: imgGenRunning ? "wait" : "pointer" }}
+        >
+          {imgGenRunning ? "⏳ Bilder werden generiert…" : "🎨 Fehlende Rezeptbilder generieren"}
+        </button>
       </div>
 
       {/* ── Info card ───────────────────────────────────────────────── */}

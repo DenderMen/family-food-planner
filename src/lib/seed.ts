@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 import { recipes, ingredients, familyMembers } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { pollinationsImageUrl } from "@/lib/utils";
 
 // ─── Family member seed data ──────────────────────────────────────────────────
 
@@ -502,7 +501,7 @@ export async function seedSnacks(familyId: string) {
         nursingBoost: null,
         steps: [`${description}`],
         childAdaptions: {},
-        imageUrl: pollinationsImageUrl(sData.name),
+        imageUrl: null,
       })
       .returning();
 
@@ -546,7 +545,7 @@ export async function seedRecipes(familyId: string) {
         isFavorite: rData.isFavorite,
         nursingBoost: rData.nursingBoost ?? null,
         steps: rData.steps,
-        imageUrl: pollinationsImageUrl(rData.name),
+        imageUrl: null,
       })
       .returning();
 
