@@ -15,8 +15,7 @@ export async function generateImage(recipeName: string): Promise<string | null> 
     const img = await window.puter.ai.txt2img(
       prompt,
       false,
-      "black-forest-labs/FLUX.1-schnell-Free",
-      { width: 1024, height: 768 }
+      "black-forest-labs/FLUX.1-schnell-Free"
     );
 
     // Convert the image element src to a File for upload
