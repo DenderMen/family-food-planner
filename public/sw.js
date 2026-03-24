@@ -1,28 +1,14 @@
-// Family Dinner Planner – Service Worker
-const CACHE_NAME = 'fdp-v1';
+// Family Dinner Planner – Service Worker v2
+// Only caches static assets. Never intercepts navigations or API calls
+// so that auth redirects (302) always reach the browser unmodified.
+const CACHE_NAME = 'fdp-v2';
 
-// App Shell – diese Routen beim Install cachen
-const PRECACHE_URLS = [
-  '/',
-  '/plan',
-  '/rezepte',
-  '/shopping',
-  '/kids',
-  '/settings',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-];
-
-// ── Install: App Shell precachen ──────────────────────────────────────────────
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
+// ── Install: skip waiting, activate immediately ───────────────────────────────
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-// ── Activate: alte Caches bereinigen ─────────────────────────────────────────
+// ── Activate: clean up old caches ─────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -32,34 +18,37 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: Network-first für API, Cache-first für Assets ─────────────────────
+// ── Fetch: cache-first for static assets only ─────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API-Calls immer live fetchen (nie cachen)
-  if (url.pathname.startsWith('/api/')) {
-    return; // Browser-Standard verwenden
+  // Pass through everything that isn't a cacheable static asset:
+  // - Non-GET requests
+  // - Different origin (Supabase, Google, etc.)
+  // - API routes
+  // - Navigation requests (HTML pages, auth redirects) ← KEY: never intercept
+  if (
+    request.method !== 'GET' ||
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith('/api/') ||
+    request.mode === 'navigate'
+  ) {
+    return;
   }
 
-  // Nur GET-Requests cachen
-  if (request.method !== 'GET') return;
+  // Only cache immutable static assets (JS chunks, CSS, fonts, images)
+  const isStaticAsset = /\.(js|css|woff2?|ttf|png|jpg|jpeg|svg|ico|webp)(\?.*)?$/.test(url.pathname);
+  if (!isStaticAsset) return;
 
-  // Externe Ressourcen (Pollinations, Supabase) durchlassen
-  if (url.origin !== self.location.origin) return;
-
-  // Stale-while-revalidate für App-Routen
+  // Cache-first strategy for static assets
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cached = await cache.match(request);
-      const networkFetch = fetch(request)
-        .then((response) => {
-          if (response.ok) cache.put(request, response.clone());
-          return response;
-        })
-        .catch(() => cached); // Offline: cached Version verwenden
-
-      return cached ?? networkFetch;
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok) cache.put(request, response.clone());
+      return response;
     })
   );
 });
