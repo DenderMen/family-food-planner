@@ -467,10 +467,8 @@ export default function SettingsPage() {
         <div style={{ fontSize: "13px", fontWeight: 700, color: "#92400E", marginBottom: 8 }}>💡 Wie es funktioniert</div>
         <ul style={{ margin: 0, padding: "0 0 0 18px", fontSize: "13px", color: "#78350F", lineHeight: 1.8 }}>
           <li>Jedes Rezept wird als Kalender-Ereignis um 17:30 Uhr eingetragen</li>
-          <li>60 Min vorher: Erinnerung „Einkaufen / Auftauen!"</li>
-          <li>10 Min vorher: Erinnerung „Kochen starten!"</li>
           <li>Zutaten werden als Beschreibung eingefügt</li>
-          <li>Alle Ereignisse erscheinen in Blau</li>
+          <li>Alle Ereignisse erscheinen in Lila</li>
         </ul>
       </div>
 
