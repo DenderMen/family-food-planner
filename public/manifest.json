@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Family Dinner Planner",
-  "short_name": "Dinner Planner",
+  "name": "Die Breuers",
+  "short_name": "Die Breuers",
   "description": "Wochenplanung, Rezeptverwaltung und Einkaufslisten für die Familie",
   "start_url": "/plan",
   "scope": "/",

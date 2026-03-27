@@ -29,7 +29,7 @@ export function AppHeader() {
                 letterSpacing: "-0.01em",
               }}
             >
-              Family Dinner Planner
+              Die Breuers
             </span>
           </Link>
           <LogoutButton />

@@ -18,13 +18,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Family Dinner Planner",
+  title: "Die Breuers",
   description: "Wochenplanung, Rezeptverwaltung und Einkaufslisten für die Familie",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Family Dinner Planner",
+    title: "Die Breuers",
     startupImage: "/apple-icon.png",
   },
   icons: {

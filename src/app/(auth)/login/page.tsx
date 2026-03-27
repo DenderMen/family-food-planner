@@ -7,7 +7,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🍽️</div>
           <h1 className="text-3xl font-[var(--font-fraunces)] text-warm-900">
-            Familien-Abendessen-Planer
+            Die Breuers
           </h1>
           <p className="text-warm-800 opacity-70 mt-2">
             Willkommen zurück!

@@ -175,6 +175,6 @@ export function buildEventDescription(recipe: RecipeForEvent): string {
     lines.push("");
   }
 
-  lines.push("— Family Dinner Planner");
+  lines.push("— Die Breuers");
   return lines.join("\n");
 }
