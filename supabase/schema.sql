@@ -4,7 +4,7 @@
 -- Dieses SQL in den Supabase SQL Editor einfügen und ausführen.
 
 -- Enums
-CREATE TYPE meal_type AS ENUM ('abendessen', 'abendbrot');
+-- meal_type wurde zu TEXT migriert (kein Enum-Constraint mehr)
 CREATE TYPE meal_category AS ENUM ('fleisch', 'fisch', 'vegetarisch', 'abendbrot');
 CREATE TYPE season AS ENUM ('frühling', 'sommer', 'herbst', 'winter');
 CREATE TYPE shop_name AS ENUM ('REWE', 'Edeka', 'Aldi', 'Metzger', 'Vorrat');
@@ -46,7 +46,7 @@ CREATE TABLE recipes (
   family_id       UUID REFERENCES families(id) ON DELETE CASCADE,
   name            TEXT NOT NULL,
   slug            TEXT NOT NULL,
-  type            meal_type NOT NULL,
+  type            TEXT NOT NULL,        -- 'abendessen' | 'abendbrot'
   category        meal_category NOT NULL,
   tags            TEXT[] DEFAULT '{}',
   seasons         season[] DEFAULT '{}',
@@ -108,7 +108,7 @@ CREATE TABLE day_plans (
   day_of_week    INTEGER NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
   date           TEXT NOT NULL,
   recipe_id      UUID REFERENCES recipes(id),
-  type           meal_type,
+  type           TEXT,                  -- 'abendessen' | 'abendbrot'
   guest_count    INTEGER DEFAULT 0,
   scale_factor   NUMERIC DEFAULT 1.0,
   notes          TEXT DEFAULT '',
