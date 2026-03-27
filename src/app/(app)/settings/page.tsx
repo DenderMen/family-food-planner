@@ -65,7 +65,6 @@ export default function SettingsPage() {
   const [calendarSaved, setCalendarSaved] = useState(false);
   const [imgGenRunning, setImgGenRunning] = useState(false);
   const [imgGenProgress, setImgGenProgress] = useState<{ done: number; total: number } | null>(null);
-  const [clearingImages, setClearingImages] = useState(false);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -139,51 +138,25 @@ export default function SettingsPage() {
     saveCalendarMut.mutate(calendarId);
   }
 
-  async function handleClearImages() {
-    if (clearingImages || imgGenRunning) return;
-    setClearingImages(true);
-    try {
-      await fetch("/api/recipes/clear-images", { method: "POST" });
-      setImgGenProgress(null);
-    } finally {
-      setClearingImages(false);
-    }
-  }
-
-  async function runImageGeneration(recipes: { id: string; name: string }[]) {
-    if (recipes.length === 0) { setImgGenProgress({ done: 0, total: 0 }); return; }
+  async function handleGenerateAllImages() {
+    if (imgGenRunning) return;
+    const res = await fetch("/api/recipes");
+    if (!res.ok) return;
+    const all: { id: string; name: string }[] = await res.json();
+    if (all.length === 0) { setImgGenProgress({ done: 0, total: 0 }); return; }
     setImgGenRunning(true);
-    setImgGenProgress({ done: 0, total: recipes.length });
-    for (let i = 0; i < recipes.length; i++) {
-      const { id, name } = recipes[i];
+    setImgGenProgress({ done: 0, total: all.length });
+    for (let i = 0; i < all.length; i++) {
+      const { id, name } = all[i];
       await fetch("/api/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recipeName: name, recipeId: id }),
       });
-      setImgGenProgress({ done: i + 1, total: recipes.length });
+      setImgGenProgress({ done: i + 1, total: all.length });
     }
     setImgGenRunning(false);
     queryClient.invalidateQueries({ queryKey: ["recipes"] });
-  }
-
-  async function handleGenerateMissingImages() {
-    if (imgGenRunning) return;
-    const res = await fetch("/api/recipes");
-    if (!res.ok) return;
-    const all: { id: string; name: string; imageUrl: string | null }[] = await res.json();
-    const missing = all.filter(
-      (r) => !r.imageUrl || r.imageUrl.includes("pollinations.ai") || r.imageUrl.includes("puter")
-    );
-    await runImageGeneration(missing);
-  }
-
-  async function handleRegenerateAllImages() {
-    if (imgGenRunning) return;
-    const res = await fetch("/api/recipes");
-    if (!res.ok) return;
-    const all: { id: string; name: string }[] = await res.json();
-    await runImageGeneration(all);
   }
 
   // ── Styles ──────────────────────────────────────────────────────────────────
@@ -416,7 +389,7 @@ export default function SettingsPage() {
           <div>
             <div style={{ fontSize: "16px", fontWeight: 700, color: "#2D2A26" }}>Rezeptbilder generieren</div>
             <div style={{ fontSize: "13px", color: "#8A8580", marginTop: 2 }}>
-              KI-Fotos für Rezepte ohne Bild erstellen (Puter.js, kostenlos)
+              KI-Fotos für alle Rezepte mit Google Gemini generieren und in Supabase speichern
             </div>
           </div>
         </div>
@@ -439,25 +412,11 @@ export default function SettingsPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <button
-            onClick={handleGenerateMissingImages}
-            disabled={imgGenRunning || clearingImages}
-            style={{ ...btn("#7B6BA4"), opacity: imgGenRunning || clearingImages ? 0.6 : 1, cursor: imgGenRunning || clearingImages ? "wait" : "pointer" }}
+            onClick={handleGenerateAllImages}
+            disabled={imgGenRunning}
+            style={{ ...btn("#7B6BA4"), opacity: imgGenRunning ? 0.6 : 1, cursor: imgGenRunning ? "wait" : "pointer" }}
           >
-            {imgGenRunning ? "⏳ Bilder werden generiert…" : "🎨 Fehlende Rezeptbilder generieren"}
-          </button>
-          <button
-            onClick={handleRegenerateAllImages}
-            disabled={imgGenRunning || clearingImages}
-            style={{ ...btn("#5A8A5E"), opacity: imgGenRunning || clearingImages ? 0.6 : 1, cursor: imgGenRunning || clearingImages ? "wait" : "pointer", fontSize: "14px" }}
-          >
-            {imgGenRunning ? "⏳ Bilder werden generiert…" : "🔄 Alle Bilder neu generieren (neuer Prompt + 1024×768)"}
-          </button>
-          <button
-            onClick={handleClearImages}
-            disabled={clearingImages || imgGenRunning}
-            style={{ ...btn("transparent", "#8A8580"), border: "1px solid #E8E2DA", opacity: clearingImages || imgGenRunning ? 0.5 : 1, cursor: clearingImages || imgGenRunning ? "wait" : "pointer", fontSize: "13px" }}
-          >
-            {clearingImages ? "⏳ Wird bereinigt…" : "🗑️ Alle Bild-URLs zurücksetzen (bei 404-Problemen)"}
+            {imgGenRunning ? "⏳ Bilder werden generiert…" : "🎨 Alle Rezeptbilder mit Gemini generieren"}
           </button>
         </div>
       </div>

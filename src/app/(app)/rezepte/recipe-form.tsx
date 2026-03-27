@@ -78,6 +78,8 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
   const [imageUrl, setImageUrl] = useState<string | null>(prefill?.imageUrl ?? recipe?.imageUrl ?? null);
   const [imageUploading, setImageUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  // Tracks the recipe ID even before the user clicks "Save" (set via silent save during image gen)
+  const [liveRecipeId, setLiveRecipeId] = useState<string | null>(recipe?.id ?? null);
   const [steps, setSteps] = useState<string[]>(
     prefill?.steps?.length ? prefill.steps : (recipe?.steps?.length ? recipe.steps : [""])
   );
@@ -103,18 +105,58 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
     }
   }
 
+  function buildPayload() {
+    return { name, type, category, prepTime: Number(prepTime), cookTime: Number(cookTime), estimatedCost, isFavorite, nursingBoost: nursingBoost || null, imageUrl, steps: steps.filter(Boolean), ingredients: ings.filter((i) => i.name) };
+  }
+
   const saveMutation = useMutation({
-    mutationFn: () => saveRecipe(recipe, { name, type, category, prepTime: Number(prepTime), cookTime: Number(cookTime), estimatedCost, isFavorite, nursingBoost: nursingBoost || null, imageUrl, steps: steps.filter(Boolean), ingredients: ings.filter((i) => i.name) }),
+    mutationFn: () => {
+      // If this is a new recipe but was silently saved before (via image gen), do a PUT
+      if (liveRecipeId && !recipe) {
+        return fetch(`/api/recipes/${liveRecipeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildPayload()),
+        }).then((r) => { if (!r.ok) throw new Error("Fehler"); return r.json(); });
+      }
+      return saveRecipe(recipe, buildPayload());
+    },
   });
+
+  async function handleGenerateImage() {
+    if (!name || generating || imageUploading) return;
+    setGenerating(true);
+    try {
+      let id = liveRecipeId;
+      // New recipe: save silently first to get an ID
+      if (!id) {
+        const saved = await saveRecipe(null, buildPayload()) as Recipe;
+        id = saved.id;
+        setLiveRecipeId(id);
+      }
+      const res = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeName: name, recipeId: id }),
+      });
+      const data = await res.json() as { url?: string };
+      if (res.ok && data.url) setImageUrl(data.url);
+    } catch {
+      // silent – image is optional
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function handleSave() {
     let saved: Recipe & { ingredients: unknown[] } | null = null;
     try {
       saved = await saveMutation.mutateAsync();
+      if (saved?.id) setLiveRecipeId(saved.id);
     } catch {
       return; // error displayed via saveMutation.isError
     }
-    // If no image, generate one via Gemini server-side
+    // If no image yet, generate one via Gemini
     if (!imageUrl && saved?.id) {
       setGenerating(true);
       try {
@@ -167,17 +209,35 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
         <button
           type="button"
           onClick={() => photoInputRef.current?.click()}
-          disabled={imageUploading}
+          disabled={imageUploading || generating}
           style={{
             position: "absolute", bottom: 10, right: 10,
             background: "rgba(0,0,0,0.55)", color: "#fff",
             border: "none", borderRadius: 10, padding: "8px 14px",
-            fontSize: "13px", fontWeight: 600, cursor: imageUploading ? "default" : "pointer",
+            fontSize: "13px", fontWeight: 600, cursor: imageUploading || generating ? "default" : "pointer",
             fontFamily: "'DM Sans', sans-serif",
             backdropFilter: "blur(4px)",
           }}
         >
-          {imageUploading ? "Lädt…" : "📷 Foto ändern"}
+          {imageUploading ? "Lädt…" : "📷 Foto"}
+        </button>
+        <button
+          type="button"
+          onClick={handleGenerateImage}
+          disabled={!name || generating || imageUploading}
+          title={!name ? "Erst einen Rezeptnamen eingeben" : "KI-Bild mit Gemini generieren"}
+          style={{
+            position: "absolute", bottom: 10, left: 10,
+            background: generating ? "rgba(123,107,164,0.85)" : "rgba(123,107,164,0.75)", color: "#fff",
+            border: "none", borderRadius: 10, padding: "8px 14px",
+            fontSize: "13px", fontWeight: 600,
+            cursor: !name || generating || imageUploading ? "default" : "pointer",
+            fontFamily: "'DM Sans', sans-serif",
+            backdropFilter: "blur(4px)",
+            opacity: !name ? 0.5 : 1,
+          }}
+        >
+          {generating ? "⏳ Generiert…" : "🎨 KI-Bild"}
         </button>
         <input
           ref={photoInputRef}

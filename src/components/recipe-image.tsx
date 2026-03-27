@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NextImage from "next/image";
 import { UtensilsCrossed, Fish, Salad, Utensils, Sandwich } from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -45,6 +45,10 @@ export function RecipeImage({ imageUrl, category, height, style }: RecipeImagePr
   const [status, setStatus] = useState<"loading" | "loaded" | "error">(
     imageUrl ? "loading" : "error"
   );
+
+  useEffect(() => {
+    setStatus(imageUrl ? "loading" : "error");
+  }, [imageUrl]);
 
   const showImage = imageUrl && status !== "error";
   const useNextImage = imageUrl ? isSupabaseUrl(imageUrl) : false;

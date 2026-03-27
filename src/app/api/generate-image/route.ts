@@ -114,6 +114,13 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const path = `${family.id}/${recipeId}.${ext}`;
 
+    // Delete any existing file for this recipe (may have a different extension)
+    const { data: existing } = await supabase.storage.from("recipe-images").list(family.id);
+    const oldFile = existing?.find((f) => f.name.startsWith(`${recipeId}.`));
+    if (oldFile) {
+      await supabase.storage.from("recipe-images").remove([`${family.id}/${oldFile.name}`]);
+    }
+
     const { error: uploadError } = await supabase.storage
       .from("recipe-images")
       .upload(path, imageBuffer, { contentType: mimeType, upsert: true });
