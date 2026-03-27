@@ -99,13 +99,12 @@ export async function seedFamilyMembers(familyId: string) {
 const SEED_RECIPES = [
   {
     name: "Bolognese mit Spaghetti",
-    type: "warm",
+    type: "abendessen",
     category: "fleisch",
     prepTime: 10,
     cookTime: 20,
     estimatedCost: "12.00",
     isFavorite: true,
-    nursingBoost: "Rind liefert Eisen und Zink – ideal für die Stillzeit.",
     steps: [
       "Zwiebel, Möhre und Knoblauch fein würfeln.",
       "Olivenöl in der Pfanne erhitzen, Gemüse 3 Min. andünsten.",
@@ -128,13 +127,12 @@ const SEED_RECIPES = [
   },
   {
     name: "Käsespätzle mit Röstzwiebeln",
-    type: "warm",
+    type: "abendessen",
     category: "vegetarisch",
     prepTime: 15,
     cookTime: 20,
     estimatedCost: "8.00",
     isFavorite: true,
-    nursingBoost: "Käse liefert Kalzium – wichtig beim Stillen.",
     steps: [
       "Mehl, Eier, Salz und Wasser zu einem zähflüssigen Teig verrühren.",
       "Großen Topf mit Salzwasser zum Kochen bringen.",
@@ -154,13 +152,12 @@ const SEED_RECIPES = [
   },
   {
     name: "Kartoffelgratin",
-    type: "warm",
+    type: "abendessen",
     category: "vegetarisch",
     prepTime: 20,
     cookTime: 45,
     estimatedCost: "10.00",
     isFavorite: true,
-    nursingBoost: "Sahne und Käse liefern Kalzium und Kalorien für die Stillzeit.",
     steps: [
       "Kartoffeln schälen und in dünne Scheiben (ca. 3mm) hobeln.",
       "Knoblauch halbieren und die Auflaufform damit ausreiben.",
@@ -182,13 +179,12 @@ const SEED_RECIPES = [
   },
   {
     name: "Kartoffeln + Spinat + Fischstäbchen",
-    type: "warm",
+    type: "abendessen",
     category: "fisch",
     prepTime: 10,
     cookTime: 25,
     estimatedCost: "9.00",
     isFavorite: true,
-    nursingBoost: "Spinat liefert Eisen und Folsäure, Fisch Omega-3 – ideal für Stillzeit.",
     steps: [
       "Kartoffeln schälen, würfeln und in Salzwasser 20 Min. kochen.",
       "Fischstäbchen nach Packung im Ofen (200°C, 15 Min.) backen.",
@@ -208,7 +204,7 @@ const SEED_RECIPES = [
   },
   {
     name: "Hot Dogs + Pommes",
-    type: "warm",
+    type: "abendessen",
     category: "fleisch",
     prepTime: 5,
     cookTime: 20,
@@ -229,13 +225,12 @@ const SEED_RECIPES = [
   },
   {
     name: "Pizza",
-    type: "warm",
+    type: "abendessen",
     category: "vegetarisch",
     prepTime: 20,
     cookTime: 15,
     estimatedCost: "8.00",
     isFavorite: true,
-    nursingBoost: "Mozzarella liefert Kalzium und Protein.",
     steps: [
       "Teig: Hefe in lauwarmes Wasser geben, 5 Min. stehen lassen.",
       "Mehl, Salz und Olivenöl zugeben, 8 Min. kneten.",
@@ -498,7 +493,6 @@ export async function seedSnacks(familyId: string) {
         totalTime: sData.prepTime,
         estimatedCost: sData.estimatedCost,
         isFavorite: false,
-        nursingBoost: null,
         steps: [`${description}`],
         childAdaptions: {},
         imageUrl: null,
@@ -543,7 +537,6 @@ export async function seedRecipes(familyId: string) {
         totalTime: rData.prepTime + rData.cookTime,
         estimatedCost: rData.estimatedCost,
         isFavorite: rData.isFavorite,
-        nursingBoost: rData.nursingBoost ?? null,
         steps: rData.steps,
         imageUrl: null,
       })
