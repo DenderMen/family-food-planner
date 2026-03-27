@@ -67,7 +67,7 @@ Diese Gerichte funktionieren immer und bilden den Kern:
 ## Datenbank-Design
 - 8 Tabellen: families, family_members, recipes, ingredients, week_plans, day_plans, shopping_lists, shopping_items
 - Row Level Security: Jede Familie sieht nur ihre Daten
-- Enums: meal_type (warm/abendbrot), meal_category (fleisch/fisch/vegetarisch/abendbrot), season, shop_name, plan_status
+- Enums: meal_type (abendessen/abendbrot), meal_category (fleisch/fisch/vegetarisch/abendbrot), season, shop_name, plan_status
 
 ## Kern-Features (Priorität)
 1. Rezept-Datenbank mit CRUD + Zutaten + Stillzeit-Info

@@ -4,7 +4,7 @@
 -- Dieses SQL in den Supabase SQL Editor einfügen und ausführen.
 
 -- Enums
-CREATE TYPE meal_type AS ENUM ('warm', 'abendbrot');
+CREATE TYPE meal_type AS ENUM ('abendessen', 'abendbrot');
 CREATE TYPE meal_category AS ENUM ('fleisch', 'fisch', 'vegetarisch', 'abendbrot');
 CREATE TYPE season AS ENUM ('frühling', 'sommer', 'herbst', 'winter');
 CREATE TYPE shop_name AS ENUM ('REWE', 'Edeka', 'Aldi', 'Metzger', 'Vorrat');
