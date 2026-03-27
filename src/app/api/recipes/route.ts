@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { recipes, ingredients } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { getCurrentFamily } from "@/lib/db/get-family";
+
+async function uniqueSlug(familyId: string, base: string): Promise<string> {
+  let slug = base;
+  let n = 2;
+  while (true) {
+    const existing = await db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(and(eq(recipes.familyId, familyId), eq(recipes.slug, slug)))
+      .limit(1);
+    if (existing.length === 0) return slug;
+    slug = `${base}-${n++}`;
+  }
+}
 
 export async function GET() {
   try {
@@ -42,6 +56,9 @@ export async function POST(request: NextRequest) {
     }
 
     const name = String(recipeData.name).trim();
+    const baseSlug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const slug = await uniqueSlug(family.id, baseSlug);
+
     const [newRecipe] = await db
       .insert(recipes)
       .values({
@@ -57,7 +74,7 @@ export async function POST(request: NextRequest) {
         isFavorite: Boolean(recipeData.isFavorite),
         imageUrl: recipeData.imageUrl ? String(recipeData.imageUrl) : null,
         steps: Array.isArray(recipeData.steps) ? recipeData.steps.filter((s: unknown) => typeof s === "string") : [],
-        slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+        slug,
       })
       .returning();
 
