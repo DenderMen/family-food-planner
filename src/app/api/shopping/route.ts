@@ -13,6 +13,7 @@ export interface RawIngredient {
   amount: number;
   unit: string;
   shop: string;
+  category: string;
   estimatedPrice: number;
   bio: boolean;
   dayOfWeek: number;
@@ -122,6 +123,7 @@ export async function GET(request: NextRequest) {
           amount: parseFloat(ing.amount),
           unit: ing.unit,
           shop: ing.preferredShop ?? "Supermarkt",
+          category: ing.category ?? "sonstiges",
           estimatedPrice: parseFloat(ing.estimatedPrice ?? "0"),
           bio: ing.bio ?? false,
           dayOfWeek: day.dayOfWeek,
@@ -140,6 +142,7 @@ export async function GET(request: NextRequest) {
             amount: parseFloat(ing.amount),
             unit: ing.unit,
             shop: ing.preferredShop ?? "Supermarkt",
+            category: ing.category ?? "sonstiges",
             estimatedPrice: parseFloat(ing.estimatedPrice ?? "0"),
             bio: ing.bio ?? false,
             dayOfWeek: day.dayOfWeek,

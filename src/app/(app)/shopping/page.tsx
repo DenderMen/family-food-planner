@@ -14,6 +14,7 @@ interface MergedItem {
   totalAmount: number;
   unit: string;
   shop: string;
+  category: string;
   totalPrice: number;
   bio: boolean;
   forDays: { dayOfWeek: number; dayName: string; recipeName: string }[];
@@ -25,6 +26,46 @@ type FilterMode = "all" | "split1" | "split2";
 
 const SHOP_ORDER = ["Aldi", "Supermarkt", "Metzger", "Vorrat"] as const;
 type ShopName = (typeof SHOP_ORDER)[number];
+
+// ─── Supermarkt-Bereiche ──────────────────────────────────────────────────────
+
+const AREA_BY_CATEGORY: Record<string, string> = {
+  gemüse:       "🥦 Obst & Gemüse",
+  obst:         "🥦 Obst & Gemüse",
+  fleisch:      "🥩 Fleisch & Wurst",
+  geflügel:     "🥩 Fleisch & Wurst",
+  fisch:        "🐟 Fisch",
+  milchprodukte:"🧀 Milch & Käse",
+  eier:         "🧀 Milch & Käse",
+  brot:         "🍞 Brot & Backwaren",
+  tiefkühl:     "❄️ Tiefkühl",
+  nudeln:       "🍝 Nudeln, Reis & Getreide",
+  reis:         "🍝 Nudeln, Reis & Getreide",
+  getreide:     "🍝 Nudeln, Reis & Getreide",
+  mehl:         "🍝 Nudeln, Reis & Getreide",
+  konserven:    "🥫 Konserven & Saucen",
+  saucen:       "🥫 Konserven & Saucen",
+  gewürze:      "🧂 Gewürze & Öle",
+  öl:           "🧂 Gewürze & Öle",
+  sonstiges:    "🛒 Sonstiges",
+};
+
+const AREA_ORDER = [
+  "🥦 Obst & Gemüse",
+  "🍞 Brot & Backwaren",
+  "🧀 Milch & Käse",
+  "🥩 Fleisch & Wurst",
+  "🐟 Fisch",
+  "❄️ Tiefkühl",
+  "🍝 Nudeln, Reis & Getreide",
+  "🥫 Konserven & Saucen",
+  "🧂 Gewürze & Öle",
+  "🛒 Sonstiges",
+] as const;
+
+function getArea(category: string): string {
+  return AREA_BY_CATEGORY[category.toLowerCase()] ?? "🛒 Sonstiges";
+}
 
 const SHOP_STYLE: Record<ShopName, { color: string; bg: string; border: string; emoji: string }> = {
   Aldi:       { color: "#1E40AF", bg: "#EFF6FF", border: "#BFDBFE", emoji: "🔵" },
@@ -65,6 +106,7 @@ function mergeItems(rawItems: RawIngredient[], dayFilter: number[]): MergedItem[
         totalAmount:    raw.amount,
         unit:           raw.unit,
         shop,
+        category:       raw.category ?? "sonstiges",
         totalPrice:     raw.estimatedPrice,
         bio:            raw.bio,
         forDays: [{ dayOfWeek: raw.dayOfWeek, dayName: raw.dayName, recipeName: raw.recipeName }],
@@ -76,6 +118,9 @@ function mergeItems(rawItems: RawIngredient[], dayFilter: number[]): MergedItem[
     const si = SHOP_ORDER.indexOf(a.shop as ShopName);
     const sj = SHOP_ORDER.indexOf(b.shop as ShopName);
     if (si !== sj) return si - sj;
+    const ai = AREA_ORDER.indexOf(getArea(a.category) as typeof AREA_ORDER[number]);
+    const bi = AREA_ORDER.indexOf(getArea(b.category) as typeof AREA_ORDER[number]);
+    if (ai !== bi) return ai - bi;
     return a.ingredientName.localeCompare(b.ingredientName, "de");
   });
 }
@@ -360,143 +405,96 @@ export default function ShoppingPage() {
               </div>
             </div>
 
-            {/* Shop items */}
-            <div
-              style={{
-                background: "#fff",
-                border: `1px solid ${style.border}`,
-                borderTop: "none",
-                borderRadius: "0 0 14px 14px",
-                overflow: "hidden",
-              }}
-            >
-              {shopItems.map((item, idx) => {
-                const isChecked  = checked.has(item.key);
-                const isExpanded = expanded.has(item.key);
-                const isLast     = idx === shopItems.length - 1;
+            {/* Shop items — grouped by supermarket area */}
+            {(() => {
+              const areaGroups: { area: string; items: MergedItem[] }[] = [];
+              for (const item of shopItems) {
+                const area = getArea(item.category);
+                const last = areaGroups[areaGroups.length - 1];
+                if (last?.area === area) last.items.push(item);
+                else areaGroups.push({ area, items: [item] });
+              }
+              const multipleAreas = areaGroups.length > 1;
 
-                return (
-                  <div
-                    key={item.key}
-                    style={{
-                      borderBottom: isLast ? "none" : "1px solid #F5EDE6",
-                      opacity: isChecked ? 0.45 : 1,
-                      transition: "opacity 0.2s",
-                    }}
-                  >
-                    {/* Main row */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        padding: "12px 14px",
-                      }}
-                    >
-                      {/* Checkbox */}
-                      <button
-                        onClick={() => toggleCheck(item.key)}
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: 8,
-                          border: `2px solid ${isChecked ? "#5A8A5E" : "#E8E2DA"}`,
-                          background: isChecked ? "#5A8A5E" : "#fff",
-                          cursor: "pointer",
-                          flexShrink: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#fff",
-                          fontSize: "14px",
-                          fontWeight: 700,
-                          transition: "all 0.15s",
-                        }}
-                        aria-label={isChecked ? "Abhaken rückgängig" : "Abhaken"}
-                      >
-                        {isChecked ? "✓" : ""}
-                      </button>
-
-                      {/* Amount + name */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: "14px", fontWeight: 700, color: "#2D2A26", textDecoration: isChecked ? "line-through" : "none" }}>
-                            {formatAmount(item.totalAmount)} {item.unit}
-                          </span>
-                          <span style={{ fontSize: "15px", color: "#2D2A26", textDecoration: isChecked ? "line-through" : "none" }}>
-                            {item.ingredientName}
-                          </span>
-                          {item.bio && (
-                            <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: 999, background: "#F0FDF4", color: "#14532D", border: "1px solid #BBF7D0", fontWeight: 600 }}>
-                              Bio
-                            </span>
-                          )}
+              return (
+                <div style={{ background: "#fff", border: `1px solid ${style.border}`, borderTop: "none", borderRadius: "0 0 14px 14px", overflow: "hidden" }}>
+                  {areaGroups.map(({ area, items: areaItems }) => (
+                    <div key={area}>
+                      {multipleAreas && (
+                        <div style={{ padding: "5px 14px", fontSize: "11px", fontWeight: 700, color: "#8A8580", background: "#FAF6F1", letterSpacing: "0.04em", textTransform: "uppercase" as const, borderBottom: "1px solid #F0EBE3" }}>
+                          {area}
                         </div>
-
-                        {/* For-days summary (collapsed) */}
-                        {!isExpanded && (
-                          <button
-                            onClick={() => toggleExpand(item.key)}
-                            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
-                          >
-                            <span style={{ fontSize: "12px", color: "#8A8580" }}>
-                              {item.forDays.length === 1
-                                ? `${item.forDays[0].dayName.slice(0, 2)}: ${item.forDays[0].recipeName}`
-                                : `${item.forDays.map((d) => d.dayName.slice(0, 2)).join(", ")} · ${item.forDays.length}× benötigt`}
-                            </span>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Price + expand toggle */}
-                      <div style={{ textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#2D2A26" }}>
-                          {formatEuro(item.totalPrice)}
-                        </span>
-                        {item.forDays.length > 1 && (
-                          <button
-                            onClick={() => toggleExpand(item.key)}
-                            style={{ fontSize: "10px", color: "#8A8580", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                          >
-                            {isExpanded ? "▲ weniger" : "▼ mehr"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Expanded: per-day breakdown */}
-                    {isExpanded && (
-                      <div
-                        style={{
-                          padding: "0 14px 12px 50px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 4,
-                        }}
-                      >
-                        {item.forDays.map((fd, i) => (
-                          <div
-                            key={i}
-                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "12px", color: "#8A8580" }}
-                          >
-                            <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#F5EDE6", color: "#C85D3B", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {fd.dayName.slice(0, 2)}
-                            </span>
-                            <span>{fd.recipeName}</span>
+                      )}
+                      {areaItems.map((item, idx) => {
+                        const isChecked  = checked.has(item.key);
+                        const isExpanded = expanded.has(item.key);
+                        const isLast     = idx === areaItems.length - 1;
+                        return (
+                          <div key={item.key} style={{ borderBottom: isLast ? "none" : "1px solid #F5EDE6", opacity: isChecked ? 0.45 : 1, transition: "opacity 0.2s" }}>
+                            {/* Main row */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px" }}>
+                              <button
+                                onClick={() => toggleCheck(item.key)}
+                                style={{ width: 24, height: 24, borderRadius: 8, border: `2px solid ${isChecked ? "#5A8A5E" : "#E8E2DA"}`, background: isChecked ? "#5A8A5E" : "#fff", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "14px", fontWeight: 700, transition: "all 0.15s" }}
+                                aria-label={isChecked ? "Abhaken rückgängig" : "Abhaken"}
+                              >
+                                {isChecked ? "✓" : ""}
+                              </button>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#2D2A26", textDecoration: isChecked ? "line-through" : "none" }}>
+                                    {formatAmount(item.totalAmount)} {item.unit}
+                                  </span>
+                                  <span style={{ fontSize: "15px", color: "#2D2A26", textDecoration: isChecked ? "line-through" : "none" }}>
+                                    {item.ingredientName}
+                                  </span>
+                                  {item.bio && (
+                                    <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: 999, background: "#F0FDF4", color: "#14532D", border: "1px solid #BBF7D0", fontWeight: 600 }}>Bio</span>
+                                  )}
+                                </div>
+                                {!isExpanded && (
+                                  <button onClick={() => toggleExpand(item.key)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
+                                    <span style={{ fontSize: "12px", color: "#8A8580" }}>
+                                      {item.forDays.length === 1
+                                        ? `${item.forDays[0].dayName.slice(0, 2)}: ${item.forDays[0].recipeName}`
+                                        : `${item.forDays.map((d) => d.dayName.slice(0, 2)).join(", ")} · ${item.forDays.length}× benötigt`}
+                                    </span>
+                                  </button>
+                                )}
+                              </div>
+                              <div style={{ textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                                <span style={{ fontSize: "13px", fontWeight: 700, color: "#2D2A26" }}>{formatEuro(item.totalPrice)}</span>
+                                {item.forDays.length > 1 && (
+                                  <button onClick={() => toggleExpand(item.key)} style={{ fontSize: "10px", color: "#8A8580", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                                    {isExpanded ? "▲ weniger" : "▼ mehr"}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            {/* Expanded breakdown */}
+                            {isExpanded && (
+                              <div style={{ padding: "0 14px 12px 50px", display: "flex", flexDirection: "column", gap: 4 }}>
+                                {item.forDays.map((fd, i) => (
+                                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "12px", color: "#8A8580" }}>
+                                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#F5EDE6", color: "#C85D3B", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                      {fd.dayName.slice(0, 2)}
+                                    </span>
+                                    <span>{fd.recipeName}</span>
+                                  </div>
+                                ))}
+                                <button onClick={() => toggleExpand(item.key)} style={{ alignSelf: "flex-start", fontSize: "11px", color: "#8A8580", background: "none", border: "none", cursor: "pointer", padding: "2px 0", marginTop: 2 }}>
+                                  ▲ schließen
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        ))}
-                        <button
-                          onClick={() => toggleExpand(item.key)}
-                          style={{ alignSelf: "flex-start", fontSize: "11px", color: "#8A8580", background: "none", border: "none", cursor: "pointer", padding: "2px 0", marginTop: 2 }}
-                        >
-                          ▲ schließen
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         );
       })}
