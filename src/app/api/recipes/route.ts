@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       .values({
         familyId: family.id,
         name,
-        type: recipeData.type === "abendbrot" ? "abendbrot" : "warm",
+        type: recipeData.type === "abendbrot" ? "abendbrot" : "abendessen",
         category: ["fleisch","fisch","vegetarisch","abendbrot","snack"].includes(recipeData.category)
           ? recipeData.category : "vegetarisch",
         prepTime: Number(recipeData.prepTime) || 0,
@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
         totalTime: (Number(recipeData.prepTime) || 0) + (Number(recipeData.cookTime) || 0),
         estimatedCost: String(recipeData.estimatedCost || "0"),
         isFavorite: Boolean(recipeData.isFavorite),
-        nursingBoost: recipeData.nursingBoost ? String(recipeData.nursingBoost) : null,
         imageUrl: recipeData.imageUrl ? String(recipeData.imageUrl) : null,
         steps: Array.isArray(recipeData.steps) ? recipeData.steps.filter((s: unknown) => typeof s === "string") : [],
         slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),

@@ -14,13 +14,12 @@ type MealCategory = "fleisch" | "fisch" | "vegetarisch" | "abendbrot" | "snack";
 interface Recipe {
   id: string;
   name: string;
-  type: string;           // "warm" | "abendbrot"
+  type: string;           // "abendessen" | "abendbrot"
   category: MealCategory;
   estimatedCost: string;
   isFavorite: boolean;
   prepTime: number;
   cookTime: number;
-  nursingBoost: string | null;
   imageUrl: string | null;
 }
 
@@ -68,7 +67,7 @@ const CAT: Record<string, { label: string; color: string; bg: string; border: st
 };
 
 const TYPE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  warm:       { label: "Warm",       color: "#92400E", bg: "#FFFBEB" },
+  abendessen: { label: "Abendessen", color: "#92400E", bg: "#FFFBEB" },
   abendbrot:  { label: "Abendbrot",  color: "#4C1D95", bg: "#F5F3FF" },
 };
 
@@ -331,13 +330,13 @@ export default function PlanPage() {
     setDay(dayOfWeek, {
       recipeId,
       recipe,
-      type: "warm",
+      type: "abendessen",
       estimatedCost: recipe?.estimatedCost ?? "0",
       skipped: false,
     });
   }
 
-  function selectType(dayOfWeek: number, mealType: "warm" | "abendbrot") {
+  function selectType(dayOfWeek: number, mealType: "abendessen" | "abendbrot") {
     if (mealType === "abendbrot") {
       setDay(dayOfWeek, {
         type: "abendbrot",
@@ -345,12 +344,12 @@ export default function PlanPage() {
         recipe: null,
         snackRecipeId: null,
         snackRecipe: null,
-        estimatedCost: "0",
+        estimatedCost: "6.00",
       });
       setSnackModal({ dayOfWeek });
     } else {
       setDay(dayOfWeek, {
-        type: "warm",
+        type: "abendessen",
         recipeId: null,
         recipe: null,
         snackRecipeId: null,
@@ -375,7 +374,6 @@ export default function PlanPage() {
       isFavorite: false,
       prepTime: snack.prepTime,
       cookTime: 0,
-      nursingBoost: null,
       imageUrl: null,
     };
     setDay(dayOfWeek, { snackRecipeId: snack.id, snackRecipe: snackAsRecipe, estimatedCost: snack.estimatedCost });
@@ -630,6 +628,7 @@ export default function PlanPage() {
                 onSelectType={selectType}
                 onSelectRecipe={selectRecipe}
                 onToggleSkip={toggleSkip}
+                onSetCost={(dow, cost) => setDay(dow, { estimatedCost: cost })}
                 onEditSnack={() => setSnackModal({ dayOfWeek: day.dayOfWeek })}
                 onRemoveSnack={() => selectSnack(day.dayOfWeek, null)}
               />
@@ -728,14 +727,15 @@ interface DayCardProps {
   favorites: Recipe[];
   rest: Recipe[];
   abendBrotCount: number;
-  onSelectType: (dayOfWeek: number, type: "warm" | "abendbrot") => void;
+  onSelectType: (dayOfWeek: number, type: "abendessen" | "abendbrot") => void;
   onSelectRecipe: (dayOfWeek: number, recipeId: string | null) => void;
   onToggleSkip: (dayOfWeek: number) => void;
+  onSetCost: (dayOfWeek: number, cost: string) => void;
   onEditSnack: () => void;
   onRemoveSnack: () => void;
 }
 
-function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, abendBrotCount, onSelectType, onSelectRecipe, onToggleSkip, onEditSnack, onRemoveSnack }: DayCardProps) {
+function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, abendBrotCount, onSelectType, onSelectRecipe, onToggleSkip, onSetCost, onEditSnack, onRemoveSnack }: DayCardProps) {
   const isAbendbrot = day.type === "abendbrot";
   const abendBrotFull = abendBrotCount >= 2 && !isAbendbrot;
 
@@ -799,7 +799,7 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
 
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {/* Cost */}
-          {!day.skipped && day.recipeId && (
+          {!day.skipped && (day.recipeId || day.type === "abendbrot") && parseFloat(day.estimatedCost || "0") > 0 && (
             <span style={{ fontSize: "13px", fontWeight: 700, color: "#2D2A26" }}>
               {formatEuro(parseFloat(day.estimatedCost || "0"))}
             </span>
@@ -808,7 +808,7 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
           {/* Skip toggle */}
           <button
             onClick={() => onToggleSkip(day.dayOfWeek)}
-            title={day.skipped ? "Wieder aktivieren" : "Tag überspringen"}
+            title={day.skipped ? "Wieder aktivieren" : "Auswärts essen"}
             style={{
               padding: "4px 10px", borderRadius: 8,
               border: `1px solid ${day.skipped ? "#BBF7D0" : "#E8E2DA"}`,
@@ -818,7 +818,7 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
               cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            {day.skipped ? "✓ Skip" : "Skip"}
+            {day.skipped ? "✓ Auswärts" : "Auswärts Essen"}
           </button>
         </div>
       </div>
@@ -835,7 +835,7 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
-                  onClick={() => onSelectType(day.dayOfWeek, "warm")}
+                  onClick={() => onSelectType(day.dayOfWeek, "abendessen")}
                   style={{
                     flex: 1, padding: "12px 8px",
                     background: "#FAF6F1", border: "1px solid #E8E2DA", borderRadius: 12,
@@ -845,7 +845,7 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
                   }}
                 >
                   <span style={{ fontSize: "22px" }}>🍲</span>
-                  Warmes Gericht
+                  Abendessen
                 </button>
                 <button
                   onClick={() => !abendBrotFull && onSelectType(day.dayOfWeek, "abendbrot")}
@@ -877,16 +877,16 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
           {day.type !== null && (
             <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
               <button
-                onClick={() => onSelectType(day.dayOfWeek, "warm")}
+                onClick={() => onSelectType(day.dayOfWeek, "abendessen")}
                 style={{
                   padding: "5px 13px", borderRadius: 8, border: "1px solid",
                   fontSize: "12px", fontWeight: 600, cursor: "pointer",
                   fontFamily: "'DM Sans', sans-serif",
-                  borderColor: day.type === "warm" ? "#C85D3B" : "#E8E2DA",
-                  background: day.type === "warm" ? "#C85D3B" : "#FAF6F1",
-                  color: day.type === "warm" ? "#fff" : "#8A8580",
+                  borderColor: day.type === "abendessen" ? "#C85D3B" : "#E8E2DA",
+                  background: day.type === "abendessen" ? "#C85D3B" : "#FAF6F1",
+                  color: day.type === "abendessen" ? "#fff" : "#8A8580",
                 }}
-              >🍲 Warm</button>
+              >🍲 Abendessen</button>
               <button
                 onClick={() => !abendBrotFull && onSelectType(day.dayOfWeek, "abendbrot")}
                 disabled={abendBrotFull}
@@ -910,8 +910,8 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
             </div>
           )}
 
-          {/* ── Warm: Rezept-Dropdown ── */}
-          {day.type === "warm" && (
+          {/* ── Abendessen: Rezept-Dropdown ── */}
+          {day.type === "abendessen" && (
             <>
               <select
                 value={day.recipeId ?? ""}
@@ -969,11 +969,6 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
                         ⏱ {day.recipe.prepTime + day.recipe.cookTime} Min
                       </span>
                     )}
-                    {day.recipe.nursingBoost && (
-                      <span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: 999, background: "rgba(236,72,153,0.08)", color: "#9D174D", border: "1px solid rgba(236,72,153,0.2)", fontWeight: 500 }}>
-                        🤱 Stillzeit
-                      </span>
-                    )}
                   </div>
                 </div>
               )}
@@ -989,9 +984,25 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
                 borderRadius: 10, padding: "10px 12px", marginBottom: 10,
               }}>
                 <span style={{ fontSize: "22px" }}>🍞</span>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: "14px", fontWeight: 700, color: "#4C1D95" }}>Abendbrot</div>
                   <div style={{ fontSize: "12px", color: "#6D28D9", marginTop: 1 }}>Brot · Aufschnitt · Käse · Gemüse</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                  <input
+                    type="number"
+                    step="0.50"
+                    min="0"
+                    value={day.estimatedCost || "6.00"}
+                    onChange={(e) => onSetCost(day.dayOfWeek, e.target.value)}
+                    style={{
+                      width: 60, padding: "4px 6px", background: "#EEE8FF",
+                      border: "1px solid #C4B5FD", borderRadius: 8,
+                      fontSize: "13px", fontWeight: 700, color: "#4C1D95",
+                      outline: "none", fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  />
+                  <span style={{ fontSize: "12px", color: "#6D28D9" }}>€</span>
                 </div>
               </div>
 
@@ -1040,7 +1051,7 @@ function DayCard({ day, dayLabel, date, isToday, cat, typeCfg, favorites, rest, 
       {/* Skipped overlay message */}
       {day.skipped && (
         <div style={{ padding: "10px 14px", fontSize: "13px", color: "#8A8580", fontStyle: "italic" }}>
-          Tag wird übersprungen – kein Kochen geplant.
+          Auswärts essen – kein Kochen geplant.
         </div>
       )}
     </div>

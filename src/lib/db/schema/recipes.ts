@@ -8,7 +8,7 @@ export const recipes = pgTable("recipes", {
   familyId: uuid("family_id").references(() => families.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
-  type: text("type").notNull(), // 'warm' | 'abendbrot'
+  type: text("type").notNull(), // 'abendessen' | 'abendbrot'
   category: text("category").notNull(), // 'fleisch' | 'fisch' | 'vegetarisch' | 'abendbrot'
   tags: text("tags").array().default([]),
   seasons: text("seasons").array().default([]),
@@ -18,7 +18,6 @@ export const recipes = pgTable("recipes", {
   estimatedCost: numeric("estimated_cost", { precision: 10, scale: 2 }).notNull(),
   steps: jsonb("steps").notNull().default([]),
   childAdaptions: jsonb("child_adaptions").default({}),
-  nursingBoost: text("nursing_boost"),
   nutrition: jsonb("nutrition").default({}),
   servings: jsonb("servings").default({}),
   isFavorite: boolean("is_favorite").default(false),

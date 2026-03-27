@@ -34,7 +34,6 @@ interface Recipe {
   cookTime: number;
   estimatedCost: string;
   isFavorite: boolean;
-  nursingBoost: string | null;
   imageUrl: string | null;
   steps: string[];
   ingredients: Ingredient[];
@@ -45,16 +44,15 @@ const CAT: Record<MealCategory, { label: string; color: string; bg: string; emoj
   fisch:       { label: "Fisch",       color: "#2563EB", bg: "rgba(37,99,235,0.08)",  emoji: "🐟" },
   vegetarisch: { label: "Vegetarisch", color: "#5A8A5E", bg: "rgba(90,138,94,0.1)",   emoji: "🥦" },
   abendbrot:   { label: "Abendbrot",   color: "#7B6BA4", bg: "rgba(123,107,164,0.1)", emoji: "🍞" },
-  snack:       { label: "Snack",       color: "#92400E", bg: "rgba(245,158,11,0.1)",  emoji: "🧀" },
+  snack:       { label: "Snack",       color: "#92400E", bg: "rgba(245,158,11,0.1)",  emoji: "🍎" },
 };
 
 const FILTERS = [
-  { value: "alle",        label: "Alle" },
-  { value: "fleisch",     label: "🥩 Fleisch" },
-  { value: "fisch",       label: "🐟 Fisch" },
-  { value: "vegetarisch", label: "🥦 Veg" },
-  { value: "abendbrot",   label: "🍞 Abend" },
-  { value: "snack",       label: "🧀 Snacks" },
+  { value: "alle",       label: "Alle" },
+  { value: "abendessen", label: "🍽️ Abendessen" },
+  { value: "abendbrot",  label: "🍞 Abendbrot" },
+  { value: "snack",      label: "🍎 Snacks" },
+  { value: "sonstiges",  label: "📦 Sonstiges" },
 ] as const;
 
 
@@ -84,7 +82,14 @@ export default function RezeptePage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["recipes"] }),
   });
 
-  const filtered = filter === "alle" ? recipeList : recipeList.filter((r) => r.category === filter);
+  const ABENDESSEN_CATS = ["fleisch", "fisch", "vegetarisch"];
+  const filtered = filter === "alle"
+    ? recipeList
+    : filter === "abendessen"
+    ? recipeList.filter((r) => ABENDESSEN_CATS.includes(r.category))
+    : filter === "sonstiges"
+    ? recipeList.filter((r) => !ABENDESSEN_CATS.includes(r.category) && r.category !== "abendbrot" && r.category !== "snack")
+    : recipeList.filter((r) => r.category === filter);
 
   if (editRecipe !== null) {
     return (
@@ -214,11 +219,6 @@ export default function RezeptePage() {
                       <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: 999, background: cat.bg, color: cat.color, fontWeight: 500 }}>
                         {cat.label}
                       </span>
-                      {recipe.nursingBoost && (
-                        <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: 999, background: "rgba(236,72,153,0.1)", color: "#9D174D" }}>
-                          🤱 Stillzeit
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>

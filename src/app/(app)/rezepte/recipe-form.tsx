@@ -26,7 +26,6 @@ interface Recipe {
   cookTime: number;
   estimatedCost: string;
   isFavorite: boolean;
-  nursingBoost: string | null;
   imageUrl: string | null;
   steps: string[];
   ingredients: Ingredient[];
@@ -68,13 +67,11 @@ const label: React.CSSProperties = { fontSize: "12px", color: "#8A8580", display
 export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProps) {
   const [tab, setTab] = useState<"basis" | "zutaten" | "zubereitung">("basis");
   const [name, setName] = useState(prefill?.name ?? recipe?.name ?? "");
-  const [type, setType] = useState(prefill?.type ?? recipe?.type ?? "warm");
+  const [type, setType] = useState(prefill?.type ?? recipe?.type ?? "abendessen");
   const [category, setCategory] = useState(prefill?.category ?? recipe?.category ?? "vegetarisch");
   const [prepTime, setPrepTime] = useState(String(prefill?.prepTime ?? recipe?.prepTime ?? "10"));
   const [cookTime, setCookTime] = useState(String(prefill?.cookTime ?? recipe?.cookTime ?? "20"));
-  const [estimatedCost, setEstimatedCost] = useState(String(prefill?.estimatedCost ?? recipe?.estimatedCost ?? ""));
   const [isFavorite, setIsFavorite] = useState(recipe?.isFavorite ?? false);
-  const [nursingBoost, setNursingBoost] = useState(prefill?.nursingBoost ?? recipe?.nursingBoost ?? "");
   const [imageUrl, setImageUrl] = useState<string | null>(prefill?.imageUrl ?? recipe?.imageUrl ?? null);
   const [imageUploading, setImageUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -106,7 +103,7 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
   }
 
   function buildPayload() {
-    return { name, type, category, prepTime: Number(prepTime), cookTime: Number(cookTime), estimatedCost, isFavorite, nursingBoost: nursingBoost || null, imageUrl, steps: steps.filter(Boolean), ingredients: ings.filter((i) => i.name) };
+    return { name, type, category, prepTime: Number(prepTime), cookTime: Number(cookTime), estimatedCost: totalCost.toFixed(2), isFavorite, imageUrl, steps: steps.filter(Boolean), ingredients: ings.filter((i) => i.name) };
   }
 
   const saveMutation = useMutation({
@@ -284,7 +281,7 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
             <div>
               <span style={label}>Typ</span>
               <select value={type} onChange={(e) => setType(e.target.value)} style={sel}>
-                <option value="warm">Warmes Essen</option>
+                <option value="abendessen">Abendessen</option>
                 <option value="abendbrot">Abendbrot</option>
               </select>
             </div>
@@ -295,31 +292,31 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
                 <option value="fisch">🐟 Fisch</option>
                 <option value="vegetarisch">🥦 Vegetarisch</option>
                 <option value="abendbrot">🍞 Abendbrot</option>
-                <option value="snack">🧀 Snack</option>
+                <option value="snack">🍎 Snack</option>
               </select>
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
               { label: "Vorbereitung", val: prepTime, set: setPrepTime, unit: "Min" },
               { label: "Kochen", val: cookTime, set: setCookTime, unit: "Min" },
-              { label: "Kosten", val: estimatedCost, set: setEstimatedCost, unit: "€" },
             ].map((f) => (
               <div key={f.label}>
                 <span style={label}>{f.label}</span>
                 <div style={{ position: "relative" }}>
-                  <input type="number" step={f.unit === "€" ? "0.01" : "1"} value={f.val} onChange={(e) => f.set(e.target.value)}
-                    style={{ ...inp, paddingRight: 28 }} />
+                  <input type="number" step="1" value={f.val} onChange={(e) => f.set(e.target.value)}
+                    style={{ ...inp, paddingRight: 40 }} />
                   <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "#8A8580" }}>{f.unit}</span>
                 </div>
               </div>
             ))}
           </div>
-
           <div>
-            <span style={label}>Stillzeit-Hinweis (optional)</span>
-            <input value={nursingBoost} onChange={(e) => setNursingBoost(e.target.value)} placeholder="z.B. Gutes Eisen für die Stillzeit" style={inp} />
+            <span style={label}>Kosten (berechnet aus Zutaten)</span>
+            <div style={{ ...inp, background: "#F0EDE8", color: "#5A8A5E", fontWeight: 700, cursor: "default" }}>
+              {formatEuro(totalCost)}
+            </div>
           </div>
 
           <label style={{ display: "flex", alignItems: "center", gap: 12, background: "#FAF6F1", border: "1px solid #E8E2DA", borderRadius: 12, padding: "12px 14px", cursor: "pointer" }}>

@@ -10,12 +10,11 @@ Extrahiere alle Rezeptinformationen und antworte NUR mit einem validen JSON-Obje
 
 {
   "name": "Rezeptname auf Deutsch",
-  "type": "warm",
+  "type": "abendessen",
   "category": "fleisch|fisch|vegetarisch|abendbrot|snack",
   "prepTime": <Minuten Vorbereitung, Zahl>,
   "cookTime": <Minuten Kochen/Backen, Zahl>,
   "estimatedCost": <geschätzte Kosten in EUR als Zahl, z.B. 8.50>,
-  "nursingBoost": null,
   "steps": ["Schritt 1", "Schritt 2"],
   "ingredients": [
     {

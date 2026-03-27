@@ -20,12 +20,11 @@ export interface SuggestedIngredient {
 
 export interface SuggestedRecipe {
   name: string;
-  type: "warm" | "abendbrot";
+  type: "abendessen" | "abendbrot";
   category: "fleisch" | "fisch" | "vegetarisch" | "abendbrot";
   prepTime: number;
   cookTime: number;
   estimatedCost: number;
-  nursingBoost: string | null;
   reason: string;
   bestFor: string;
   steps: string[];
@@ -160,7 +159,6 @@ export async function POST(request: NextRequest) {
       if (dislikes.length) parts.push(`mag nicht: ${dislikes.join(", ")}`);
       if (allergies.length) parts.push(`Allergien: ${allergies.join(", ")}`);
       if (needs.length) parts.push(needs.join(", "));
-      if (m.isNursing) parts.push("stillt (+500kcal, extra Kalzium/Eisen/Omega3)");
       return `${m.emoji ?? ""} ${m.name}: ${parts.join("; ") || "keine Angaben"}`;
     }).join("\n");
 
@@ -173,7 +171,7 @@ export async function POST(request: NextRequest) {
     const prompt = `Familienrezept-Assistent. Stil: Familienkost.de / KptnCook – alltagstauglich, deutsche Familienküche, keine exotischen Zutaten.
 
 Familienmitglieder und Vorlieben:
-${memberContext || "2 Erwachsene (1 stillend), Kinder 4+2, Baby"}
+${memberContext || "2 Erwachsene, Kinder 4+2, Baby"}
 
 Regeln: max. 30 Min, kein Scharfes, kein rohes Fleisch, kein Alkohol, Bio bevorzugt.
 Saison: ${season} | Budget-Rest: ${formatEuro(remainingBudget)} (max. ${formatEuro(maxCostPerMeal)}/Gericht)
@@ -187,11 +185,12 @@ Laden-Zuordnung (fest einhalten):
 - Supermarkt: Gemüse, Obst, Milch, Käse, Eier, Sahne, Brot, TK-Gemüse, Fisch
 
 Preise: realistische deutsche Supermarktpreise 2025 (Hackfleisch 500g=4,50€, Spaghetti 500g=1,20€, Sahne 200ml=0,89€).
+Abendbrot-Kosten: ca. 5–8€ für klassisches Abendbrot (Brot, Aufschnitt, Käse, Gemüse).
 
 Schlage genau 3 verschiedene Abendessen vor. Begründe jeden Vorschlag kurz (1 Satz) und nenne wem es besonders schmeckt.
 Antworte NUR mit diesem JSON, kein Markdown:
 
-{"suggestions":[{"name":"...","type":"warm","category":"fleisch","prepTime":10,"cookTime":20,"estimatedCost":12.00,"nursingBoost":"...oder null","reason":"Fisch fehlt + Kaja braucht Omega3","bestFor":"Kaja & Theo","steps":["Schritt 1","Schritt 2"],"ingredients":[{"name":"...","amount":"300","unit":"g","category":"fleisch","preferredShop":"Metzger","estimatedPrice":"4.50","bio":false}]}]}
+{"suggestions":[{"name":"...","type":"abendessen","category":"fleisch","prepTime":10,"cookTime":20,"estimatedCost":12.00,"reason":"Fisch fehlt diese Woche","bestFor":"Theo & Carlo","steps":["Schritt 1","Schritt 2"],"ingredients":[{"name":"...","amount":"300","unit":"g","category":"fleisch","preferredShop":"Metzger","estimatedPrice":"4.50","bio":false}]}]}
 
 Wichtig: max. 6 Zutaten, max. 5 Schritte, genau 3 Rezepte.`;
 

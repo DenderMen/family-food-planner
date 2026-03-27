@@ -1,4 +1,4 @@
-export type MealType = "warm" | "abendbrot";
+export type MealType = "abendessen" | "abendbrot";
 export type MealCategory = "fleisch" | "fisch" | "vegetarisch" | "abendbrot" | "snack";
 export type Season = "frühling" | "sommer" | "herbst" | "winter";
 export type ShopName = "Aldi" | "Supermarkt" | "Metzger" | "Vorrat";

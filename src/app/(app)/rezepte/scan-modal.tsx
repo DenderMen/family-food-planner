@@ -20,7 +20,6 @@ export interface ScanResult {
   prepTime: number;
   cookTime: number;
   estimatedCost: number;
-  nursingBoost: string | null;
   imageUrl: string | null;
   steps: string[];
   ingredients: Ingredient[];

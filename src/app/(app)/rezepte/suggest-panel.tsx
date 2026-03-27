@@ -40,7 +40,6 @@ async function saveRecipe(suggestion: SuggestedRecipe): Promise<void> {
     cookTime:      suggestion.cookTime,
     estimatedCost: String(suggestion.estimatedCost.toFixed(2)),
     isFavorite:    false,
-    nursingBoost:  suggestion.nursingBoost,
     steps:         suggestion.steps,
     ingredients:   suggestion.ingredients,
   };
@@ -272,11 +271,6 @@ function SuggestionCard({ suggestion, saveState, onSave }: SuggestionCardProps) 
               <span style={{ fontSize: "11px", fontWeight: 700, color: "#2D2A26" }}>
                 {formatEuro(suggestion.estimatedCost)}
               </span>
-              {suggestion.nursingBoost && (
-                <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: 999, background: "rgba(236,72,153,0.1)", color: "#9D174D", border: "1px solid rgba(236,72,153,0.2)", fontWeight: 500 }}>
-                  🤱 Stillzeit
-                </span>
-              )}
               {suggestion.bestFor && (
                 <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: 999, background: "#F0FDF4", color: "#14532D", border: "1px solid #BBF7D0", fontWeight: 500 }}>
                   👍 {suggestion.bestFor}
@@ -333,13 +327,6 @@ function SuggestionCard({ suggestion, saveState, onSave }: SuggestionCardProps) 
       {/* Expanded details */}
       {expanded && (
         <div style={{ borderTop: "1px solid #E8E2DA", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Nursing boost */}
-          {suggestion.nursingBoost && (
-            <div style={{ background: "rgba(236,72,153,0.06)", borderRadius: 10, padding: "10px 12px", fontSize: "13px", color: "#9D174D", border: "1px solid rgba(236,72,153,0.15)" }}>
-              🤱 <strong>Stillzeit:</strong> {suggestion.nursingBoost}
-            </div>
-          )}
-
           {/* Ingredients */}
           {suggestion.ingredients.length > 0 && (
             <div>
