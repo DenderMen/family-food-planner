@@ -23,6 +23,7 @@ interface Ingredient {
   preferredShop: string;
   estimatedPrice: string;
   bio: boolean;
+  isBasic: boolean;
 }
 
 interface Recipe {

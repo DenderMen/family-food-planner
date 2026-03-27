@@ -81,6 +81,7 @@ CREATE TABLE ingredients (
   bio             BOOLEAN DEFAULT false,
   regional        BOOLEAN DEFAULT false,
   is_optional     BOOLEAN DEFAULT false,
+  is_basic        BOOLEAN DEFAULT false,
   sort_order      INTEGER DEFAULT 0
 );
 

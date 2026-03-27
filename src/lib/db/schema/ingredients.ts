@@ -15,6 +15,7 @@ export const ingredients = pgTable("ingredients", {
   bio: boolean("bio").default(false),
   regional: boolean("regional").default(false),
   isOptional: boolean("is_optional").default(false),
+  isBasic: boolean("is_basic").default(false),
   sortOrder: integer("sort_order").default(0),
 });
 

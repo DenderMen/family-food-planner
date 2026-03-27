@@ -16,6 +16,7 @@ export interface RawIngredient {
   category: string;
   estimatedPrice: number;
   bio: boolean;
+  isBasic: boolean;
   dayOfWeek: number;
   dayName: string;
   recipeName: string;
@@ -126,6 +127,7 @@ export async function GET(request: NextRequest) {
           category: ing.category ?? "sonstiges",
           estimatedPrice: parseFloat(ing.estimatedPrice ?? "0"),
           bio: ing.bio ?? false,
+          isBasic: ing.isBasic ?? false,
           dayOfWeek: day.dayOfWeek,
           dayName,
           recipeName,
@@ -145,6 +147,7 @@ export async function GET(request: NextRequest) {
             category: ing.category ?? "sonstiges",
             estimatedPrice: parseFloat(ing.estimatedPrice ?? "0"),
             bio: ing.bio ?? false,
+            isBasic: ing.isBasic ?? false,
             dayOfWeek: day.dayOfWeek,
             dayName,
             recipeName: `${snackName} (Snack)`,

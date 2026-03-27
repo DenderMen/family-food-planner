@@ -15,6 +15,7 @@ interface Ingredient {
   preferredShop: string;
   estimatedPrice: string;
   bio: boolean;
+  isBasic: boolean;
 }
 
 interface Recipe {
@@ -82,10 +83,10 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
   );
   const [ings, setIngs] = useState<Ingredient[]>(
     prefill?.ingredients?.length
-      ? prefill.ingredients.map((i) => ({ ...i, estimatedPrice: String(i.estimatedPrice) }))
+      ? prefill.ingredients.map((i) => ({ ...i, estimatedPrice: String(i.estimatedPrice), isBasic: i.isBasic ?? false }))
       : recipe?.ingredients?.length
-      ? recipe.ingredients
-      : [{ name: "", amount: "", unit: "g", category: "gemüse", preferredShop: "Supermarkt", estimatedPrice: "", bio: false }]
+      ? recipe.ingredients.map((i) => ({ ...i, isBasic: (i as Ingredient).isBasic ?? false }))
+      : [{ name: "", amount: "", unit: "g", category: "gemüse", preferredShop: "Supermarkt", estimatedPrice: "", bio: false, isBasic: false }]
   );
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -362,14 +363,20 @@ export function RecipeForm({ recipe, onClose, onSaved, prefill }: RecipeFormProp
                   {ING_CATS.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "13px", color: "#2D2A26", cursor: "pointer" }}>
-                <input type="checkbox" checked={ing.bio} onChange={(e) => updIng(idx, "bio", e.target.checked)} style={{ accentColor: "#5A8A5E" }} />
-                Bio
-              </label>
+              <div style={{ display: "flex", gap: 16 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "13px", color: "#2D2A26", cursor: "pointer" }}>
+                  <input type="checkbox" checked={ing.bio} onChange={(e) => updIng(idx, "bio", e.target.checked)} style={{ accentColor: "#5A8A5E" }} />
+                  Bio
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "13px", color: "#2D2A26", cursor: "pointer" }} title="Immer zu Hause — erscheint separat in der Einkaufsliste">
+                  <input type="checkbox" checked={ing.isBasic} onChange={(e) => updIng(idx, "isBasic", e.target.checked)} style={{ accentColor: "#8A8580" }} />
+                  🏠 Immer zu Hause
+                </label>
+              </div>
             </div>
           ))}
           <button
-            onClick={() => setIngs((p) => [...p, { name: "", amount: "", unit: "g", category: "gemüse", preferredShop: "Supermarkt", estimatedPrice: "", bio: false }])}
+            onClick={() => setIngs((p) => [...p, { name: "", amount: "", unit: "g", category: "gemüse", preferredShop: "Supermarkt", estimatedPrice: "", bio: false, isBasic: false }])}
             style={{ padding: "14px", border: "2px dashed #E8E2DA", borderRadius: 14, background: "transparent", color: "#8A8580", fontSize: "14px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
             + Zutat hinzufügen
           </button>

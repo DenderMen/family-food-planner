@@ -11,6 +11,7 @@ interface Ingredient {
   preferredShop: string;
   estimatedPrice: number;
   bio: boolean;
+  isBasic?: boolean;
 }
 
 export interface ScanResult {

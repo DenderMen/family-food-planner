@@ -17,6 +17,7 @@ interface MergedItem {
   category: string;
   totalPrice: number;
   bio: boolean;
+  isBasic: boolean;
   forDays: { dayOfWeek: number; dayName: string; recipeName: string }[];
 }
 
@@ -109,6 +110,7 @@ function mergeItems(rawItems: RawIngredient[], dayFilter: number[]): MergedItem[
         category:       raw.category ?? "sonstiges",
         totalPrice:     raw.estimatedPrice,
         bio:            raw.bio,
+        isBasic:        raw.isBasic ?? false,
         forDays: [{ dayOfWeek: raw.dayOfWeek, dayName: raw.dayName, recipeName: raw.recipeName }],
       });
     }
@@ -164,17 +166,24 @@ export default function ShoppingPage() {
     [data, filter]
   );
 
+  const { shopItems: regularItems, basicItems } = useMemo(() => ({
+    shopItems: items.filter((i) => !i.isBasic),
+    basicItems: items.filter((i) => i.isBasic),
+  }), [items]);
+
+  const [basicsOpen, setBasicsOpen] = useState(false);
+
   const byShop = useMemo(() => {
     const map = new Map<string, MergedItem[]>();
-    for (const item of items) {
+    for (const item of regularItems) {
       if (!map.has(item.shop)) map.set(item.shop, []);
       map.get(item.shop)!.push(item);
     }
     return map;
-  }, [items]);
+  }, [regularItems]);
 
-  const grandTotal     = items.reduce((s, i) => s + i.totalPrice, 0);
-  const checkedTotal   = items.filter((i) => checked.has(i.key)).reduce((s, i) => s + i.totalPrice, 0);
+  const grandTotal     = regularItems.reduce((s, i) => s + i.totalPrice, 0);
+  const checkedTotal   = regularItems.filter((i) => checked.has(i.key)).reduce((s, i) => s + i.totalPrice, 0);
   const remainingTotal = grandTotal - checkedTotal;
   const checkedCount   = checked.size;
 
@@ -322,7 +331,7 @@ export default function ShoppingPage() {
       )}
 
       {/* ── No items for this split ────────────────────────────────── */}
-      {!isLoading && !error && data?.hasRecipes && items.length === 0 && (
+      {!isLoading && !error && data?.hasRecipes && regularItems.length === 0 && basicItems.length === 0 && (
         <div style={{ ...card, padding: "24px", textAlign: "center" }}>
           <p style={{ color: "#8A8580", fontSize: "14px", margin: 0 }}>
             Für diesen Zeitraum sind keine Rezepte geplant.
@@ -331,7 +340,7 @@ export default function ShoppingPage() {
       )}
 
       {/* ── Summary bar ───────────────────────────────────────────── */}
-      {items.length > 0 && (
+      {(regularItems.length > 0 || basicItems.length > 0) && (
         <div style={{ ...card, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div>
             <div style={{ fontSize: "22px", fontWeight: 700, fontFamily: "'Fraunces', serif", color: "#2D2A26" }}>
@@ -499,8 +508,52 @@ export default function ShoppingPage() {
         );
       })}
 
+      {/* ── Pantry Basics ──────────────────────────────────────────── */}
+      {basicItems.length > 0 && (
+        <div style={{ border: "1px solid #E8E2DA", borderRadius: 16, overflow: "hidden" }}>
+          <button
+            onClick={() => setBasicsOpen((v) => !v)}
+            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "#F5F5F0", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "16px" }}>🏠</span>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "#8A8580" }}>
+                Wahrscheinlich zu Hause
+              </span>
+              <span style={{ fontSize: "12px", color: "#C0BAB4", background: "#EDEAE5", borderRadius: 999, padding: "2px 8px" }}>
+                {basicItems.length}
+              </span>
+            </div>
+            <span style={{ fontSize: "12px", color: "#C0BAB4" }}>{basicsOpen ? "▲" : "▼"}</span>
+          </button>
+          {basicsOpen && (
+            <div style={{ background: "#fff" }}>
+              {basicItems.map((item, idx) => {
+                const isChecked = checked.has(item.key);
+                const isLast = idx === basicItems.length - 1;
+                return (
+                  <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: isLast ? "none" : "1px solid #F5EDE6", opacity: isChecked ? 0.4 : 0.65 }}>
+                    <button
+                      onClick={() => toggleCheck(item.key)}
+                      style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${isChecked ? "#C0BAB4" : "#E8E2DA"}`, background: isChecked ? "#C0BAB4" : "#fff", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "12px", fontWeight: 700 }}
+                    >
+                      {isChecked ? "✓" : ""}
+                    </button>
+                    <span style={{ flex: 1, fontSize: "14px", color: "#8A8580", textDecoration: isChecked ? "line-through" : "none" }}>
+                      <span style={{ fontWeight: 600 }}>{formatAmount(item.totalAmount)} {item.unit}</span>
+                      {" "}{item.ingredientName}
+                    </span>
+                    <span style={{ fontSize: "11px", color: "#C0BAB4", fontStyle: "italic" }}>vorrätig</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Bottom spacing ─────────────────────────────────────────── */}
-      {items.length > 0 && (
+      {regularItems.length > 0 && (
         <div style={{ ...card, padding: "14px 18px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "14px", color: "#8A8580" }}>Gesamt</span>
@@ -508,7 +561,7 @@ export default function ShoppingPage() {
               {formatEuro(grandTotal)}
             </span>
           </div>
-          {[...byShop.entries()].map(([shop, shopItems]) => (
+          {[...byShop.entries()].map(([shop, shopItems]: [string, MergedItem[]]) => (
             <div key={shop} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#8A8580", marginTop: 6 }}>
               <span>{shop}</span>
               <span>{formatEuro(shopItems.reduce((s, i) => s + i.totalPrice, 0))}</span>

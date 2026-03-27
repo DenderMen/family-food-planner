@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { recipes, ingredients } from "@/lib/db/schema";
 import { eq, asc, and } from "drizzle-orm";
 import { getCurrentFamily } from "@/lib/db/get-family";
+import { isPantryStaple } from "@/lib/pantry-staples";
 
 async function uniqueSlug(familyId: string, base: string): Promise<string> {
   let slug = base;
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
           preferredShop: ing.preferredShop || "Supermarkt",
           estimatedPrice: String(ing.estimatedPrice || "0"),
           bio: Boolean(ing.bio),
+          isBasic: ing.isBasic !== undefined ? Boolean(ing.isBasic) : isPantryStaple(ing.name),
           sortOrder: i,
         }))
       );

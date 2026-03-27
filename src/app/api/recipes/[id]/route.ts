@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { recipes, ingredients } from "@/lib/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 import { getCurrentFamily } from "@/lib/db/get-family";
+import { isPantryStaple } from "@/lib/pantry-staples";
 
 export async function GET(
   _request: NextRequest,
@@ -88,6 +89,7 @@ export async function PUT(
             preferredShop: ing.preferredShop || "Supermarkt",
             estimatedPrice: String(ing.estimatedPrice || "0"),
             bio: Boolean(ing.bio),
+            isBasic: ing.isBasic !== undefined ? Boolean(ing.isBasic) : isPantryStaple(ing.name),
             sortOrder: i,
           }))
         );
