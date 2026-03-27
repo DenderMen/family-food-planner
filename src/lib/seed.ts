@@ -278,7 +278,7 @@ const SNACK_RECIPES = [
     ],
   },
   {
-    name: "Wiener Würstchen warm",
+    name: "Wiener Würstchen klassisch",
     description: "Klassische Würstchen im heißen Wasser, mit Senf",
     estimatedCost: "3.20",
     prepTime: 8,

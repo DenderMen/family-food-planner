@@ -11,7 +11,7 @@ export const dayPlans = pgTable("day_plans", {
   date: text("date").notNull(),
   recipeId: uuid("recipe_id").references(() => recipes.id),
   snackRecipeId: uuid("snack_recipe_id").references(() => recipes.id),
-  type: text("type"), // 'warm' | 'abendbrot'
+  type: text("type"), // 'abendessen' | 'abendbrot'
   guestCount: integer("guest_count").default(0),
   scaleFactor: numeric("scale_factor").default("1.0"),
   notes: text("notes").default(""),
