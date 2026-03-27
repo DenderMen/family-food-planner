@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getWeekId } from "@/lib/utils";
 import type { SettingsResponse } from "@/app/api/settings/route";
@@ -20,13 +20,13 @@ type SyncState =
 
 async function fetchSettings(): Promise<SettingsResponse> {
   const res = await fetch("/api/settings");
-  if (!res.ok) throw new Error("Fehler");
+  if (!res.ok) throw new Error("Einstellungen konnten nicht geladen werden. Bitte Seite neu laden.");
   return res.json();
 }
 
 async function fetchCalendars(): Promise<CalendarsResponse> {
   const res = await fetch("/api/calendar/calendars");
-  if (!res.ok) throw new Error("Fehler beim Laden der Kalender");
+  if (!res.ok) throw new Error("Kalender konnten nicht geladen werden. Bitte Google-Verbindung prüfen.");
   return res.json();
 }
 
@@ -36,12 +36,12 @@ async function saveCalendar(calendarId: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ calendarId }),
   });
-  if (!res.ok) throw new Error("Fehler beim Speichern");
+  if (!res.ok) throw new Error("Fehler beim Speichern des Kalenders.");
 }
 
 async function disconnectGoogle(): Promise<void> {
   const res = await fetch("/api/auth/google/disconnect", { method: "POST" });
-  if (!res.ok) throw new Error("Fehler beim Trennen");
+  if (!res.ok) throw new Error("Trennen fehlgeschlagen. Bitte nochmal versuchen.");
 }
 
 async function syncCalendar(weekId: string): Promise<SyncResponse> {
@@ -51,7 +51,7 @@ async function syncCalendar(weekId: string): Promise<SyncResponse> {
     body: JSON.stringify({ weekId }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? "Fehler beim Sync");
+  if (!res.ok) throw new Error(data.error ?? "Sync fehlgeschlagen. Bitte Google-Verbindung prüfen.");
   return data;
 }
 
@@ -65,6 +65,10 @@ export default function SettingsPage() {
   const [calendarSaved, setCalendarSaved] = useState(false);
   const [imgGenRunning, setImgGenRunning] = useState(false);
   const [imgGenProgress, setImgGenProgress] = useState<{ done: number; total: number } | null>(null);
+  const [imgGenErrors, setImgGenErrors] = useState<string[]>([]);
+  const [recipeCount, setRecipeCount] = useState<number | null>(null);
+  const [disconnectConfirm, setDisconnectConfirm] = useState(false);
+  const abortRef = useRef(false);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -105,6 +109,14 @@ export default function SettingsPage() {
     }
   }, [calendarsData]);
 
+  // Pre-fetch recipe count so user sees it before clicking generate
+  useEffect(() => {
+    fetch("/api/recipes")
+      .then((r) => r.ok ? r.json() : [])
+      .then((all: { id: string }[]) => setRecipeCount(all.length))
+      .catch(() => null);
+  }, []);
+
   const saveCalendarMut = useMutation({
     mutationFn: saveCalendar,
     onSuccess: () => {
@@ -120,6 +132,7 @@ export default function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       queryClient.invalidateQueries({ queryKey: ["calendars"] });
       setSelectedCalendarId("");
+      setDisconnectConfirm(false);
     },
   });
 
@@ -128,8 +141,10 @@ export default function SettingsPage() {
     try {
       const result = await syncCalendar(currentWeekId);
       setSyncState({ status: "success", result });
+      // Auto-dismiss after 6s
+      setTimeout(() => setSyncState({ status: "idle" }), 6000);
     } catch (err) {
-      setSyncState({ status: "error", message: err instanceof Error ? err.message : "Fehler" });
+      setSyncState({ status: "error", message: err instanceof Error ? err.message : "Unbekannter Fehler" });
     }
   }
 
@@ -144,15 +159,22 @@ export default function SettingsPage() {
     if (!res.ok) return;
     const all: { id: string; name: string }[] = await res.json();
     if (all.length === 0) { setImgGenProgress({ done: 0, total: 0 }); return; }
+    abortRef.current = false;
     setImgGenRunning(true);
+    setImgGenErrors([]);
     setImgGenProgress({ done: 0, total: all.length });
     for (let i = 0; i < all.length; i++) {
+      if (abortRef.current) break;
       const { id, name } = all[i];
-      await fetch("/api/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeName: name, recipeId: id }),
-      });
+      try {
+        await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recipeName: name, recipeId: id }),
+        });
+      } catch {
+        setImgGenErrors((prev) => [...prev, name]);
+      }
       setImgGenProgress({ done: i + 1, total: all.length });
     }
     setImgGenRunning(false);
@@ -320,6 +342,16 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* ── How it works ──────────────────────────────────────── */}
+            <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400E", marginBottom: 6 }}>💡 Wie es funktioniert</div>
+              <ul style={{ margin: 0, padding: "0 0 0 16px", fontSize: "12px", color: "#78350F", lineHeight: 1.8 }}>
+                <li>Jedes Rezept wird als Kalender-Ereignis um 17:30 Uhr eingetragen</li>
+                <li>Zutaten werden als Beschreibung eingefügt</li>
+                <li>Alle Ereignisse erscheinen in Lila</li>
+              </ul>
+            </div>
+
             {/* ── Sync button ───────────────────────────────────────── */}
             <button
               onClick={handleSync}
@@ -363,19 +395,50 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Disconnect */}
-            <button
-              onClick={() => disconnectMut.mutate()}
-              disabled={disconnectMut.isPending}
-              style={{
-                ...btn("transparent", "#8A8580"),
-                border: "1px solid #E8E2DA",
-                opacity: disconnectMut.isPending ? 0.5 : 1,
-                cursor: disconnectMut.isPending ? "wait" : "pointer",
-              }}
-            >
-              {disconnectMut.isPending ? "Wird getrennt…" : "🔌 Verbindung trennen"}
-            </button>
+            {/* ── Disconnect ────────────────────────────────────────── */}
+            {disconnectConfirm ? (
+              <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "12px 14px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#991B1B", marginBottom: 10 }}>
+                  Google-Verbindung wirklich trennen?
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => disconnectMut.mutate()}
+                    disabled={disconnectMut.isPending}
+                    style={{
+                      flex: 1, padding: "9px 0", background: "#DC2626", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: "13px", fontWeight: 600,
+                      cursor: disconnectMut.isPending ? "wait" : "pointer",
+                      fontFamily: "'DM Sans', sans-serif",
+                      opacity: disconnectMut.isPending ? 0.6 : 1,
+                    }}
+                  >
+                    {disconnectMut.isPending ? "Wird getrennt…" : "Ja, trennen"}
+                  </button>
+                  <button
+                    onClick={() => setDisconnectConfirm(false)}
+                    disabled={disconnectMut.isPending}
+                    style={{
+                      flex: 1, padding: "9px 0", background: "transparent", color: "#4A4540",
+                      border: "1px solid #E8E2DA", borderRadius: 8, fontSize: "13px", fontWeight: 600,
+                      cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setDisconnectConfirm(true)}
+                style={{
+                  ...btn("transparent", "#8A8580"),
+                  border: "1px solid #E8E2DA",
+                }}
+              >
+                🔌 Verbindung trennen
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -390,6 +453,11 @@ export default function SettingsPage() {
             <div style={{ fontSize: "16px", fontWeight: 700, color: "#2D2A26" }}>Rezeptbilder generieren</div>
             <div style={{ fontSize: "13px", color: "#8A8580", marginTop: 2 }}>
               KI-Fotos für alle Rezepte mit Google Gemini generieren und in Supabase speichern
+              {recipeCount !== null && !imgGenRunning && (
+                <span style={{ marginLeft: 6, fontWeight: 600, color: "#7B6BA4" }}>
+                  · {recipeCount} Rezepte
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -397,8 +465,14 @@ export default function SettingsPage() {
         {imgGenProgress !== null && (
           <div style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#4A4540", marginBottom: 6 }}>
-              <span>{imgGenProgress.total === 0 ? "Alle Rezepte haben bereits ein Bild ✓" : `${imgGenProgress.done} / ${imgGenProgress.total} generiert`}</span>
-              {imgGenProgress.total > 0 && !imgGenRunning && imgGenProgress.done === imgGenProgress.total && (
+              <span>
+                {imgGenProgress.total === 0
+                  ? "Alle Rezepte haben bereits ein Bild ✓"
+                  : abortRef.current
+                  ? `Abgebrochen bei ${imgGenProgress.done} / ${imgGenProgress.total}`
+                  : `${imgGenProgress.done} / ${imgGenProgress.total} generiert`}
+              </span>
+              {imgGenProgress.total > 0 && !imgGenRunning && imgGenProgress.done > 0 && (
                 <span style={{ color: "#5A8A5E", fontWeight: 600 }}>Fertig!</span>
               )}
             </div>
@@ -407,28 +481,38 @@ export default function SettingsPage() {
                 <div style={{ height: "100%", background: "#7B6BA4", borderRadius: 999, width: `${Math.round((imgGenProgress.done / imgGenProgress.total) * 100)}%`, transition: "width 0.3s ease" }} />
               </div>
             )}
+            {imgGenErrors.length > 0 && (
+              <div style={{ marginTop: 8, fontSize: "12px", color: "#991B1B" }}>
+                ⚠️ {imgGenErrors.length} Fehler: {imgGenErrors.join(", ")}
+              </div>
+            )}
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={handleGenerateAllImages}
             disabled={imgGenRunning}
-            style={{ ...btn("#7B6BA4"), opacity: imgGenRunning ? 0.6 : 1, cursor: imgGenRunning ? "wait" : "pointer" }}
+            style={{ ...btn("#7B6BA4"), opacity: imgGenRunning ? 0.6 : 1, cursor: imgGenRunning ? "wait" : "pointer", flex: 1 }}
           >
-            {imgGenRunning ? "⏳ Bilder werden generiert…" : "🎨 Alle Rezeptbilder mit Gemini generieren"}
+            {imgGenRunning
+              ? `⏳ ${imgGenProgress?.done ?? 0} / ${imgGenProgress?.total ?? "…"}`
+              : "🎨 Alle Rezeptbilder generieren"}
           </button>
+          {imgGenRunning && (
+            <button
+              onClick={() => { abortRef.current = true; }}
+              style={{
+                padding: "14px 16px", background: "#FEF2F2", color: "#991B1B",
+                border: "1px solid #FECACA", borderRadius: 12, fontSize: "14px",
+                fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                flexShrink: 0,
+              }}
+            >
+              ✕ Stopp
+            </button>
+          )}
         </div>
-      </div>
-
-      {/* ── Info card ───────────────────────────────────────────────── */}
-      <div style={{ ...card, background: "#FFFBEB", border: "1px solid #FDE68A" }}>
-        <div style={{ fontSize: "13px", fontWeight: 700, color: "#92400E", marginBottom: 8 }}>💡 Wie es funktioniert</div>
-        <ul style={{ margin: 0, padding: "0 0 0 18px", fontSize: "13px", color: "#78350F", lineHeight: 1.8 }}>
-          <li>Jedes Rezept wird als Kalender-Ereignis um 17:30 Uhr eingetragen</li>
-          <li>Zutaten werden als Beschreibung eingefügt</li>
-          <li>Alle Ereignisse erscheinen in Lila</li>
-        </ul>
       </div>
 
       {/* ── Family member preferences ──────────────────────────────── */}
@@ -461,7 +545,7 @@ export default function SettingsPage() {
 
 async function fetchMembers(): Promise<MembersListResponse> {
   const res = await fetch("/api/members");
-  if (!res.ok) throw new Error("Fehler");
+  if (!res.ok) throw new Error("Familienmitglieder konnten nicht geladen werden.");
   return res.json();
 }
 
@@ -476,7 +560,7 @@ async function saveMemberPrefs(id: string, prefs: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(prefs),
   });
-  if (!res.ok) throw new Error("Fehler beim Speichern");
+  if (!res.ok) throw new Error("Fehler beim Speichern.");
 }
 
 function MemberPrefsSection({ card }: { card: React.CSSProperties }) {
@@ -485,12 +569,6 @@ function MemberPrefsSection({ card }: { card: React.CSSProperties }) {
   const { data, isLoading } = useQuery({
     queryKey: ["members"],
     queryFn: fetchMembers,
-  });
-
-  const saveMut = useMutation({
-    mutationFn: ({ id, prefs }: { id: string; prefs: Parameters<typeof saveMemberPrefs>[1] }) =>
-      saveMemberPrefs(id, prefs),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["members"] }),
   });
 
   const seedMut = useMutation({
@@ -578,8 +656,6 @@ function MemberPrefsSection({ card }: { card: React.CSSProperties }) {
           key={member.id}
           member={member}
           card={card}
-          onSave={(prefs) => saveMut.mutate({ id: member.id, prefs })}
-          saving={saveMut.isPending}
         />
       ))}
     </div>
@@ -644,7 +720,7 @@ function TagField({ label, color, bg, border, tags, canEdit, onChange }: TagFiel
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addTag()}
-            placeholder={`${label} hinzufügen…`}
+            placeholder={`${label} eingeben, Enter ↵`}
             style={{
               flex: 1, padding: "7px 11px", background: "#FAF6F1",
               border: `1px solid ${border}`, borderRadius: 8,
@@ -671,16 +747,24 @@ function TagField({ label, color, bg, border, tags, canEdit, onChange }: TagFiel
 interface MemberCardProps {
   member: MemberResponse;
   card: React.CSSProperties;
-  onSave: (prefs: { likes: string[]; dislikes: string[]; allergies: string[]; dietaryNeeds: string[] }) => void;
-  saving: boolean;
 }
 
-function MemberCard({ member, card, onSave, saving }: MemberCardProps) {
+function MemberCard({ member, card }: MemberCardProps) {
+  const queryClient = useQueryClient();
   const [likes, setLikes]           = useState<string[]>(member.likes ?? []);
   const [dislikes, setDislikes]     = useState<string[]>(member.dislikes ?? []);
   const [allergies, setAllergies]   = useState<string[]>(member.allergies ?? []);
   const [needs, setNeeds]           = useState<string[]>(member.dietaryNeeds ?? []);
   const [isDirty, setIsDirty]       = useState(false);
+
+  const saveMut = useMutation({
+    mutationFn: (prefs: Parameters<typeof saveMemberPrefs>[1]) =>
+      saveMemberPrefs(member.id, prefs),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      setIsDirty(false);
+    },
+  });
 
   // Reset local state when server data changes
   useEffect(() => {
@@ -712,16 +796,16 @@ function MemberCard({ member, card, onSave, saving }: MemberCardProps) {
         </div>
         {isDirty && (
           <button
-            onClick={() => { onSave({ likes, dislikes, allergies, dietaryNeeds: needs }); setIsDirty(false); }}
-            disabled={saving}
+            onClick={() => saveMut.mutate({ likes, dislikes, allergies, dietaryNeeds: needs })}
+            disabled={saveMut.isPending}
             style={{
               padding: "6px 14px", background: "#5A8A5E", color: "#fff",
               border: "none", borderRadius: 8, fontSize: "12px", fontWeight: 600,
               cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-              opacity: saving ? 0.7 : 1,
+              opacity: saveMut.isPending ? 0.7 : 1,
             }}
           >
-            {saving ? "…" : "Speichern"}
+            {saveMut.isPending ? "Wird gespeichert…" : "Speichern"}
           </button>
         )}
       </div>
